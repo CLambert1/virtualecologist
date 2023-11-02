@@ -1,0 +1,69 @@
+flat_simulate_env.Rmd:
+  path: dev/flat_simulate_env.Rmd
+  state: active
+  R:
+  - R/create_grid.R
+  - R/generate_env_layer.R
+  - R/generate_resource_layer.R
+  tests:
+  - tests/testthat/test-create_grid.R
+  - tests/testthat/test-generate_env_layer.R
+  - tests/testthat/test-generate_resource_layer.R
+  vignettes: vignettes/simulate-virtual-environment.Rmd
+  inflate:
+    flat_file: dev/flat_simulate_env.Rmd
+    vignette_name: Simulate virtual environment
+    open_vignette: true
+    check: true
+    document: true
+    overwrite: ask
+flat_simulate_mvmt.Rmd:
+  path: dev/flat_simulate_mvmt.Rmd
+  state: active
+  R:
+  - R/potential_position_func.R
+  - R/randomdir.R
+  - R/simulate_trajectory_cpf.R
+  - R/simulate_trajectory_fr.R
+  tests:
+  - tests/testthat/test-potential_position_func.R
+  - tests/testthat/test-simulate_trajectory_cpf.R
+  - tests/testthat/test-simulate_trajectory_fr.R
+  vignettes: vignettes/simulate-individual-movements.Rmd
+  inflate:
+    flat_file: dev/flat_simulate_mvmt.Rmd
+    vignette_name: Simulate individual movements
+    open_vignette: true
+    check: true
+    document: true
+    overwrite: ask
+flat_simulate_sp.Rmd:
+  path: dev/flat_simulate_sp.Rmd
+  state: active
+  R:
+  - R/custom_proj.R
+  - R/simul_spat.R
+  tests:
+  - tests/testthat/test-custom_proj.R
+  - tests/testthat/test-simul_spat.R
+  vignettes: vignettes/simulate-virtual-species.Rmd
+  inflate:
+    flat_file: dev/flat_simulate_sp.Rmd
+    vignette_name: Simulate virtual species
+    open_vignette: true
+    check: true
+    document: true
+    overwrite: ask
+flat_utils.Rmd:
+  path: dev/flat_utils.Rmd
+  state: active
+  R: R/.R
+  tests: []
+  vignettes: []
+  inflate:
+    flat_file: dev/flat_utils.Rmd
+    vignette_name: .na
+    open_vignette: true
+    check: true
+    document: true
+    overwrite: ask

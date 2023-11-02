@@ -1,0 +1,338 @@
+---
+title: "flat_simul_spat.Rmd empty"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r development, include=FALSE}
+library(testthat)
+grid <- create_grid()
+cdt <- generate_env_layer(grid = grid)
+rsce <- generate_resource_layer(env_layers = cdt$rasters,
+                            beta = c(2, -1.5))
+
+terra::crs(rsce$rasters) <- custom_proj()
+
+```
+
+```{r development-load}
+# Load already included functions if relevant
+pkgload::load_all(export_all = FALSE)
+```
+
+
+# Create a custom projection
+
+The upcoming analyses necessitates working in a projected environment. Because we are in a virtual environment, we must define a custom projection. This is what does `custom_proj()`.
+    
+```{r function-custom_proj}
+#' Set up a custom projection for virtual environment
+#'
+#' @param lon_0,lat_0 Longitude and Latitude of the center, defaults to 0
+#' @param x_0,y_0 False easting and northing, defaults to 0
+#'
+#' @return A object of class crs
+#' @export
+#'
+#' @examples
+custom_proj <- function(lon_0 = 0, lat_0 = 0, x_0 = 0, y_0 = 0){
+  tmp <- 'PROJCS["Ad_hoc_handy_wkt2_template_for_laea",
+    GEOGCS["WGS 84",
+        DATUM["WGS_1984",
+            SPHEROID["WGS 84",6378137,298.257223563]],
+        PRIMEM["Greenwich",0],
+        UNIT["Degree",0.0174532925199433]],
+    PROJECTION["Lambert_Azimuthal_Equal_Area"],
+    PARAMETER["latitude_of_center",{lat_0}],
+    PARAMETER["longitude_of_center",{lon_0}],
+    PARAMETER["false_easting",{x_0}],
+    PARAMETER["false_northing",{y_0}],
+    UNIT["metre",1]]'
+
+  custom_proj <- sf::st_crs(glue::glue(tmp))
+  return(custom_proj)
+}
+```
+  
+```{r example-custom_proj}
+custom_proj()
+```
+  
+```{r tests-custom_proj}
+test_that("custom_proj works", {
+  expect_true(inherits(custom_proj, "function")) 
+})
+```
+  
+    
+```{r function-rpoispp_custom}
+#' Custom rpoispp
+#' 
+#' Description
+#' @import spatstat
+#' @importFrom stats rpois
+#' @importFrom stats runif
+#' 
+#' 
+#' @noRd
+rpoispp_custom <- function (lambda, lmax = NULL, win = spatstat.geom::owin(), ..., nsim = 1, 
+          drop = TRUE, ex = NULL, warnwin = TRUE, N) 
+{
+  if (!missing(nsim)) {
+    spatstat.utils::check.1.integer(nsim)
+    stopifnot(nsim >= 1)
+  }
+  if (missing(lambda) && is.null(lmax) && missing(win) && 
+      !is.null(ex)) {
+    lambda <- spatstat.geom::intensity(spatstat.geom::unmark(ex))
+    win <- spatstat.geom::Window(ex)
+  }
+  else {
+    if (!(is.numeric(lambda) || is.function(lambda) || spatstat.geom::is.im(lambda))) 
+      stop(paste(sQuote("lambda"), "must be a constant, a function or an image"))
+    if (is.numeric(lambda) && !(length(lambda) == 1 && lambda >= 
+                                0)) 
+      stop(paste(sQuote("lambda"), "must be a single, nonnegative number"))
+    if (!is.null(lmax)) {
+      if (!is.numeric(lmax)) 
+        stop("lmax should be a number")
+      if (length(lmax) > 1) 
+        stop("lmax should be a single number")
+    }
+    if (spatstat.geom::is.im(lambda)) {
+      if (warnwin && !missing(win)) 
+        warning("Argument win ignored", call. = FALSE)
+      win <- spatstat.geom::rescue.rectangle(spatstat.geom::as.owin(lambda))
+    }
+    else {
+      win <- spatstat.geom::as.owin(win)
+    }
+  }
+  if (is.numeric(lambda)) 
+    return(spatstat.random::runifpoispp(lambda, win, nsim = nsim, drop = drop))
+  if (is.null(lmax)) {
+    imag <- spatstat.geom::as.im(lambda, win, ...)
+    summ <- summary(imag)
+    lmax <- summ$max + 0.05 * diff(summ$range)
+  }
+  if (is.function(lambda)) {
+    result <- spatstat.random::runifpoispp(lmax, win, nsim = nsim, drop = FALSE)
+    for (isim in 1:nsim) {
+      X <- result[[isim]]
+      if (X$n > 0) {
+        prob <- lambda(X$x, X$y, ...)/lmax
+        u <- runif(X$n)
+        retain <- (u <= prob)
+        result[[isim]] <- X[retain]
+      }
+    }
+    if (nsim == 1 && drop) 
+      result <- result[[1L]]
+    return(result)
+  }
+  if (spatstat.geom::is.im(lambda)) {
+    if (spatstat.geom::spatstat.options("fastpois")) {
+      # mu <- integral(lambda)
+      mu <- N
+      dx <- lambda$xstep/2
+      dy <- lambda$ystep/2
+      df <- as.data.frame(lambda)
+      npix <- nrow(df)
+      lpix <- df$value
+      result <- vector(mode = "list", length = nsim)
+      nn <- stats::rpois(nsim, mu)
+      if (!all(is.finite(nn))) 
+        stop(paste("Unable to generate Poisson process with a mean of", 
+                   mu, "points"))
+      for (isim in seq_len(nsim)) {
+        ni <- nn[isim]
+        ii <- sample.int(npix, size = ni, replace = TRUE, 
+                         prob = lpix)
+        xx <- df$x[ii] + stats::runif(ni, -dx, dx)
+        yy <- df$y[ii] + stats::runif(ni, -dy, dy)
+        result[[isim]] <- spatstat.geom::ppp(xx, yy, window = win, 
+                              check = FALSE)
+      }
+      result <- spatstat.geom::simulationresult(result, nsim, drop)
+      return(result)
+    }
+    else {
+      result <- spatstat.random::runifpoispp(lmax, win, nsim = nsim, drop = FALSE)
+      for (isim in 1:nsim) {
+        X <- result[[isim]]
+        if (X$n > 0) {
+          prob <- lambda[X]/lmax
+          u <- stats::runif(X$n)
+          retain <- (u <= prob)
+          result[[isim]] <- X[retain]
+        }
+      }
+      if (nsim == 1 && drop) 
+        return(result[[1L]])
+      return(result)
+    }
+  }
+  stop(paste(sQuote("lambda"), "must be a constant, a function or an image"))
+}
+```
+  
+
+
+# Simulate spatial point process
+
+Generates a spatial point process from a reference map, using Inhomogeneous Poisson Point Process with spatstat's IPP. The intensity of the process is proportional to this reference map, and the final number of individuals in the population is provided by N. Several runs can be simulated at the same time. 
+
+To do : add an id to each generated obs (only done when n_sim = 1)
+
+
+```{r function-simul_spat}
+#' Simulate spatial point process
+#' 
+#' Generates a spatial point process from a reference map, using Inhomogeneous Poisson Point Process with spatstat IPP. The intensity of the process is proportional to this reference map, and the final number of individuals in the population is provided by N. Several runs can be simulated at the same time. If working in a real environment, reference map must be projected.
+#'
+#' @param ref_map Reference map, must be projected
+#' @param N Number of individuals in the final population
+#' @param seed Numeric
+#' @param n_sim Number of simulation to run
+#' @param return_wgs_coordinates Boolean. Should the function returns points in WGS coordinates? Recommended when working on real environment
+#' @param drop_geometry Boolean. Should the geometry be dropped in returned object? Defaults to FALSE, if TRUE the function will return a data.frame and not a sf object. 
+#' @param mean_group_size The mean group size to generate the mark. Set to NULL if no mark is wanted.
+#' 
+#' @import sf 
+#' @importFrom purrr map_df 
+#' @importFrom tibble tibble
+#' @importFrom terra as.data.frame
+#' @importFrom tidyr drop_na
+#' @importFrom spatstat.geom as.im
+#' 
+#' 
+#' @return Returns an sf object
+#' @export
+#'
+#' @examples
+simul_spat <- function(ref_map, 
+                       N,
+                       seed = NULL,
+                       n_sim = 1, 
+                       return_wgs_coordinates = TRUE,
+                       drop_geometry = FALSE,
+                       mean_group_size = NULL
+) {
+  # check whether ref_map is projected
+  if(isTRUE(sf::st_is_longlat(ref_map))){
+    stop("ref_map must be in projected coordinates.")
+  }
+  if(all(is.na(sf::st_is_longlat(ref_map)),
+         isTRUE(return_wgs_coordinates))){
+    stop("ref_map has no crs, return_wgs_coordinates must be set to FALSE.")
+  }
+  if(all(is.na(sf::st_is_longlat(ref_map)),
+         isFALSE(return_wgs_coordinates))){
+    warning("ref_map has no crs, is that voluntary? The output will have no crs.")
+  }
+  
+  # base map to im object
+  # https://rdrr.io/cran/maptools/man/as.ppp.html
+  df_map <- terra::as.data.frame(ref_map, xy = T)
+  df_map <- df_map |> tidyr::drop_na()
+  
+  X <- spatstat.geom::as.im(df_map)
+  # use spatstat.geom::as.im() for class data.frame (sur data.frame(raster))
+  
+  ### generate observations according to an Inhomogeneous Poisson Point Process with spatstat IPP
+  seed <- sample.int(1e6, 1)
+  set.seed(seed)
+  y_obs <- rpoispp_custom(lambda = X, drop = TRUE, N = N, nsim = n_sim)
+  
+  if(n_sim == 1) {
+    pts <- obs <- data.frame(x = y_obs$x,
+                             y = y_obs$y
+    )
+    pts$obs.id <- 1:nrow(pts)
+  } else {
+    y_obs <- purrr::map_df(y_obs,
+                         ~tibble::tibble(x = .$x, y = .$y),
+                         .id = "name")
+    pts <- obs <- data.frame(x = y_obs$x,
+                            y = y_obs$y,
+                            name = y_obs$name
+    ) 
+    # miss affecting obs id
+  }
+
+   # y_obs |> dplyr::group_by(name) |> dplyr::mutate(obs.id = 1:dplyr::tally(.))
+   
+   
+  if(return_wgs_coordinates == TRUE){
+    pts <- pts |>
+      sf::st_as_sf(coords = c("x", "y"), crs = sf::st_crs(sf::st_crs(ref_map))) |>
+      sf::st_transform(crs = sf::st_crs(4326)) 
+    pts[, c("lon", "lat")] <- pts |> sf::st_coordinates()
+  } else {
+    pts <- pts |>
+      sf::st_as_sf(coords = c("x", "y"), crs = sf::st_crs(sf::st_crs(ref_map)))
+    pts[, c("x", "y")] <- pts |> sf::st_coordinates()
+  }
+
+  # affect a mark if mean_group_size is not null
+  if(!is.null(mean_group_size)){
+    n_obs <- nrow(pts)
+    omega <- rep(1, n_obs)
+    pts$size <- stats::rpois(n_obs, lambda = (mean_group_size - 1) * omega) + 1
+  }
+  
+  if(drop_geometry == TRUE){
+    return(sf::st_drop_geometry(pts))
+  } else {
+    return(pts)
+  }
+}
+```
+
+```{r examples-simul_spat}
+grid <- create_grid()
+cdt <- generate_env_layer(grid = grid)
+rsce <- generate_resource_layer(env_layers = cdt$rasters,
+                            beta = c(2, -1.5))
+
+# issue a warning: we are in a virtual env and ref_map has no crs
+out <- simul_spat(ref_map = rsce$rasters, n_sim = 2, 
+                  return_wgs_coordinates = FALSE, N = 1000, mean_group_size = 10)
+
+ggplot2::ggplot(out) +
+  ggplot2::geom_tile(data = rsce$dataframe, ggplot2::aes(x = x, y = y, fill = suitability)) + 
+  ggplot2::geom_sf() + ggplot2::facet_wrap("name") +
+  viridis::scale_fill_viridis(option = "H")
+
+ggplot2::ggplot(out) +
+   ggplot2::geom_sf(ggplot2::aes(size = size)) + ggplot2::facet_wrap("name") 
+
+```
+
+```{r tests-simul_spat}
+test_that("simul_spat works", {
+  grid <- create_grid()
+  cdt <- generate_env_layer(grid = grid)
+  rsce <- generate_resource_layer(env_layers = cdt$rasters,
+                              beta = c(2, -1.5))
+  
+  # expect_warning(
+  #     object = simul_spat(ref_map = rsce$rasters, n_sim = 2, return_wgs_coordinates = FALSE, N = 1000, mean_group_size = 10),
+  #     regexp = "ref_map has no crs, is that voluntary? The output will have no crs."
+  #   )
+    
+    expect_error(
+      object = simul_spat(ref_map = rsce$rasters, n_sim = 2, return_wgs_coordinates = TRUE, N = 1000, mean_group_size = 10)
+    )
+
+})
+```
+
+
+```{r development-inflate, eval=FALSE}
+# Run but keep eval=FALSE to avoid infinite loop
+# Execute in the console directly
+fusen::inflate(flat_file = "dev/flat_simulate_sp.Rmd", vignette_name = "Simulate virtual species")
+```
+

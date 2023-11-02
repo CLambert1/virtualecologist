@@ -1,0 +1,16 @@
+url: ~
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  theme:  github-light
+navbar:
+  structure:
+    left:  [intro, reference, articles, tutorials, news]
+    right: [search, github]
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - simulate-virtual-environment
+  - simulate-virtual-species
+  - simulate-individual-movements

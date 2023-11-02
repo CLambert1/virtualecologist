@@ -1,0 +1,41 @@
+Package: simtools
+Title: Tools For Simulation Analyses
+Version: 0.0.0.9000
+Authors@R: 
+    person("Charlotte", "Lambert", , "charlotte.lambert@univ-lr.fr", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1128-5262"))
+Description: Includes a suite of tools to simulate virtual ecological
+    systems, from environment, to animals and surveys.
+License: MIT + file LICENSE
+Imports: 
+    circular,
+    dplyr,
+    fields,
+    glue,
+    gstat,
+    lubridate,
+    purrr,
+    sf,
+    sp,
+    spatstat,
+    spatstat.geom,
+    spatstat.random,
+    spatstat.utils,
+    stats,
+    terra,
+    tibble,
+    tidyr
+Suggests: 
+    ggplot2,
+    insol,
+    knitr,
+    rmarkdown,
+    testthat,
+    tidyterra,
+    viridis
+VignetteBuilder: 
+    knitr
+Config/fusen/version: 0.5.2
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
