@@ -71,8 +71,7 @@ test_that("custom_proj works", {
 #' 
 #' Description
 #' @import spatstat
-#' @importFrom stats rpois
-#' @importFrom stats runif
+#' @importFrom stats rpois runif
 #' 
 #' 
 #' @noRd

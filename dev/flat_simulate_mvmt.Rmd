@@ -62,8 +62,7 @@ Generating a bunch of potential positions to chose the next step from. Positions
 #' @param colony.location data.frame vector with lon and lat position of the colony
 #' @param resource.layer SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)
 #' 
-#' @importFrom terra extract
-#' @importFrom terra nlyr
+#' @importFrom terra extract nlyr
 #' @importFrom fields rdist
 #' 
 #' @return A data.frame with the n potential positions from the point of origin, informed with the value of the provided environmental layer corresponding to each as well as the distance from the colony. 
@@ -176,11 +175,7 @@ When individuals reaches the threshold distance to colony (max.dist), or the tri
 #' 
 #'
 #' @import lubridate
-#' @importFrom dplyr full_join
-#' @importFrom dplyr slice_sample
-#' @importFrom dplyr slice_head
-#' @importFrom dplyr desc
-#' @importFrom dplyr arrange
+#' @importFrom dplyr full_join slice_sample slice_head desc arrange
 #' 
 #' @return a data.frame
 #' @export
@@ -578,11 +573,7 @@ Same as above, but the individual is not restrained around its colony and does n
 #' @param activity.threshold Threshold environmental value defining when an individual switches from travelling to foraging movement
 #'
 #' @import lubridate
-#' @importFrom dplyr full_join
-#' @importFrom dplyr slice_sample
-#' @importFrom dplyr slice_head
-#' @importFrom dplyr desc
-#' @importFrom dplyr arrange
+#' @importFrom dplyr full_join slice_sample slice_head desc arrange
 #' 
 #' @return a data.frame
 #' @export

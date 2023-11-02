@@ -1,0 +1,249 @@
+---
+title: "flat_flat_simulate_survey.Rmd empty"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r development, include=FALSE}
+library(testthat)
+grid <- create_grid()
+env <- generate_env_layer(grid = grid)
+
+### 1 - Generate virtual survey plan -------------------------------------------
+# set scale to 1 = 2 km to construct the segments
+
+# define bounding box
+bbx <- as(raster::extent(c(5,85,5,85)), "SpatialPolygons")
+
+# create transects
+vect.y <- seq(5, 85, by = 4) # transects espac?s de 2*4 = 8 km
+list_coord <- lapply(seq_along(vect.y), function(i) { rbind( c(5, vect.y[i]), c(85, vect.y[i])) })
+
+transects <- raster::spLines(list_coord) |> sf::st_as_sf() |> sf::st_cast(to ="LINESTRING") |>
+    dplyr::mutate(length = 80, id = 1:21)
+
+terra::plot(env$rasters$sim1)
+lines(sf::as_Spatial(transects))
+
+# segmentize
+segments <- NULL
+idTransects <- unique(transects$id)
+
+for(i in 1:length(idTransects)){
+    trans <- transects |> sf::st_as_sf() |> subset(id == idTransects[i]) |>
+        sf::as_Spatial()
+    seg <- SegmentSpatialLines(trans, length = 1, merge.last = FALSE)
+    seg <- sf::st_as_sf(seg)
+
+    # seg <- Merge(seg)
+
+    seg_df <- sf::st_as_sf(
+        data.frame(
+            id = 1:nrow(seg),
+            Shape = seg,
+            transect = trans$id,
+            TransLengthKm = as.numeric(round(trans$length,0)),
+            SegLengthKm = as.numeric(round(st_length(seg),0))
+        ))
+    seg_df <- seg_df |>
+        mutate(seg.id = qdapTools::id(seg_df, prefix= paste(trans$id, "_Seg_", sep="")))
+
+    segments <- rbind(segments, seg_df)
+}
+# write_sf(segments |> sf::st_as_sf(), dsn = paste(outdir, "Survey_segments.shp", sep = "/"))
+
+# buffer around segments
+buf <- segments |> sf::st_as_sf() |> sf::st_buffer(dist = 0.5, endCapStyle = "FLAT")
+
+terra::plot(env$rasters$sim1)
+lines(sf::as_Spatial(segments))
+
+
+
+```
+
+```{r development-load}
+# Load already included functions if relevant
+pkgload::load_all(export_all = FALSE)
+```
+
+
+# segmentize
+    
+```{r function-segmentize}
+### Segmentize transects
+### Author : Auriane Virgili (auriane.virgili@univ-lr.fr)
+
+CreateSegment <- function(coords, from, to) {
+  distance <- 0
+  coordsOut <- c()
+  biggerThanFrom <- F
+  for (i in 1:(nrow(coords) - 1)) {
+    d <- sqrt((coords[i, 1] - coords[i + 1, 1])^2 + (coords[i, 2] - coords[i + 1, 2])^2)
+    distance <- distance + d
+    if (!biggerThanFrom && (distance > from)) {
+      w <- 1 - (distance - from)/d
+      x <- coords[i, 1] + w * (coords[i + 1, 1] - coords[i, 1])
+      y <- coords[i, 2] + w * (coords[i + 1, 2] - coords[i, 2])
+      coordsOut <- rbind(coordsOut, c(x, y))
+      biggerThanFrom <- T
+    }
+    if (biggerThanFrom) {
+      if (distance > to) {
+        w <- 1 - (distance - to)/d
+        x <- coords[i, 1] + w * (coords[i + 1, 1] - coords[i, 1])
+        y <- coords[i, 2] + w * (coords[i + 1, 2] - coords[i, 2])
+        coordsOut <- rbind(coordsOut, c(x, y))
+        break
+      }
+      coordsOut <- rbind(coordsOut, c(coords[i + 1, 1], coords[i + 1, 2]))
+    }
+  }
+  return(coordsOut)
+}
+
+CreateSegments <- function(coords, length = 0, n.parts = 0) {
+  stopifnot((length > 0 || n.parts > 0))
+  # calculate total length line
+  total_length <- 0
+  for (i in 1:(nrow(coords) - 1)) {
+    d <- sqrt((coords[i, 1] - coords[i + 1, 1])^2 + (coords[i, 2] - coords[i + 1, 2])^2)
+    total_length <- total_length + d
+  }
+  
+  # calculate stationing of segments
+  if (length > 0) {
+    stationing <- c(seq(from = 0, to = total_length, by = length), total_length)
+  } else {
+    stationing <- c(seq(from = 0, to = total_length, length.out = n.parts), 
+                    total_length)
+  }
+  
+  # calculate segments and store the in list
+  newlines <- list()
+  for (i in 1:(length(stationing) - 1)) {
+    newlines[[i]] <- CreateSegment(coords, stationing[i], stationing[i + 1])
+  }
+  return(newlines)
+}
+
+MergeLast <- function(lst) {
+  l <- length(lst)
+  lst[[l - 1]] <- rbind(lst[[l - 1]], lst[[l]])
+  lst <- lst[1:(l - 1)]
+  return(lst)
+}
+
+#' Title
+#'
+#' @param sl a spatial line object
+#' @param length length to segmentize
+#' @param n.parts number of parts to cut the transect into
+#' @param merge.last should the last bit be merged with the previous one?
+#'
+#' @importFrom sp Lines
+#' @importFrom sp Line
+#'
+#' @return
+#'
+SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE) {
+  stopifnot((length > 0 || n.parts > 0))
+  id <- 0
+  newlines <- list()
+  sl <- sf::as(sl, "SpatialLines")
+  for (lines in sl@lines) {
+    for (line in lines@Lines) {
+      crds <- line@coords
+      # create segments
+      segments <- CreateSegments(coords = crds, length, n.parts)
+      if (merge.last && length(segments) > 1) {
+        # in case there is only one segment, merging would result into error
+        segments <- MergeLast(segments)
+      }
+      # transform segments to lineslist for SpatialLines object
+      for (segment in segments) {
+        newlines <- c(newlines, sp::Lines(list(sp::Line(unlist(segment))), ID = as.character(id)))
+        id <- id + 1
+      }
+    }
+  }
+  return(SpatialLines(newlines))
+}
+
+#' Title
+#'
+#' @param segments a sf object
+#'
+#' @importFrom sf st_length
+#' @importFrom sf st_union
+#' 
+#' @return a sf object
+#'
+Merge <- function(segments) {
+  
+  n <- as.numeric(nrow(segments))
+  
+  if (n > 2 && as.numeric(sf::st_length(segments$geometry[n])) < 3000){
+    
+    corr <- segments[(n-1):n,] %>% summarize(geometry = sf::st_union(geometry)) 
+    
+    segments_corr <- rbind(segments[1:(n-2),], corr)
+    
+    return(segments_corr)
+    
+  }
+  
+  else if (n == 2 && as.numeric(sf::st_length(segments$geometry[n])) < 3000){
+    
+    corr <- segments[(n-1):n,] %>% summarize(geometry = sf::st_union(geometry)) 
+    
+    segments_corr <- corr
+    
+    return(segments_corr)
+    
+  }
+  
+  else {
+    
+    return(segments)
+  }
+  
+} 
+```
+  
+
+# 1 Simulate a transect design
+
+This design can be done with the *dssd* package (L Marshall, 2021) when working on real-world examples. The functions presented here, provide facilities to build a simple layout in a virtual space. The built layout will consist of parallel transects covering a given area in the virtual environment, spaced out by a given distance and segmentised by a given length. 
+
+
+```{r function-flat_simulate_survey}
+#' flat_simulate_survey Title
+#'
+#' @return 1
+#' @export
+#'
+#' @examples
+flat_simulate_survey <- function() {
+  1
+}
+```
+
+```{r examples-flat_simulate_survey}
+flat_simulate_survey()
+```
+
+```{r tests-flat_simulate_survey}
+test_that("flat_simulate_survey works", {
+
+})
+```
+
+
+```{r development-inflate, eval=FALSE}
+# Run but keep eval=FALSE to avoid infinite loop
+# Execute in the console directly
+fusen::inflate(flat_file = "dev/flat_flat_simulate_survey.Rmd", vignette_name = "Go further")
+```
+

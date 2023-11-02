@@ -123,8 +123,7 @@ This function creates several environmental layers using Gaussian simulation fro
 #' @return Returns a data frame with the simulated environmental values, as well as SpatRast is return.rasters = TRUE
 #' @export
 #' 
-#' @importFrom gstat gstat
-#' @importFrom gstat vgm
+#' @importFrom gstat gstat vgm
 #' @importFrom terra rast
 #' @importFrom stats predict
 #' 

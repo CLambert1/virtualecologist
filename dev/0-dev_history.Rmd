@@ -41,7 +41,23 @@ fusen::init_share_on_github()
 # Start using git
 
 ```{r, eval=FALSE}
+## definit le compte
+usethis::use_git_config(scope = "user",
+                        user.name = "CLambert1",
+                        user.email = "charlotte.anne.lambert@gmail.com",
+                        credential.helper = "store",
+                        init.defaultBranch = "main")
+# donne les identifiants
+gitcreds::gitcreds_set(url = "https://github.com/")
+
+# lance l'utilisation de git en local
 usethis::use_git()
+
+# associe au repo en remote
+# usethis::use_git_remote(url = "https://github.com/CLambert1/simtools.git") # ne fonctionne pas car l'autentification via rstudio n'est plus autorisé par github
+# doit faire dans le terminal : git clone https://github.com/CLambert1/simtools.git ; puis autentification dans le pop-up
+# ensuite git push -u origin main dans le terminal pour faire le premier push et activer la syncro
+  
 # Deal with classical files to ignore
 usethis::git_vaccinate()
 # Use main for primary branch
