@@ -12,6 +12,12 @@ grid <- create_grid()
 env <- generate_env_layer(grid = grid)
 sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
 
+surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 5, end.x = 85, start.y = 5, end.y = 85,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 1, 
+                             buffer = TRUE, buffer.width = 0.2
+                             )
+
 ```
 
 ```{r development-load}
@@ -353,7 +359,199 @@ test_that("generate_survey_plan works", {
 ```
 
 
-# 2. Simulate survey on fixed individual
+# 2. Assign a flight plan to the survey
+
+Before launching a survey, a flight plan must be set up, that is the order by which segments will be surveyed must be chosen. This function gets a segment objects (buffered segments from above), a vector providing the order by which segment table rows will be surveyed, the survey starting date and time, the speed of the aircraft (from which is calculated the survey duration of a single segment) and the duration of the transit period between two successive transects. The function automatically adds a one-second gap between two consecutive segments to avoid overlapping periods. 
+
+```{r function-assign_flight_plan}
+#' Assign a flight plan to a survey design
+#'
+#' @param sf.segments sf object, segments to assign flight plan to
+#' @param flight.id numeric vector, giving the order by which the segments must be surveyed
+#' @param col.trans.id character, the column in sf.segments storing transect names
+#' @param flight.day character, the day the survey flight is carried out (ymd format: "2022-02-08")
+#' @param survey.start.hour character, the hour the survey is started (hms format: "06:00:00")
+#' @param flight.speed numeric, the speed at which a single segment is surveyed (in km/h)
+#' @param intransect.gap.duration numeric, the duration of the transit from a transect to the other (in seconds)
+#'
+#' @return a sf table with four additional columns (transect.id, flight.id, start.time and end.time) informing the period over which each segment is surveyed
+#' @export
+#'
+#' @examples
+assign_flight_plan <- function(
+    sf.segments,
+    flight.id,
+    col.trans.id,
+    flight.day, 
+    survey.start.hour,
+    flight.speed,
+    intertransect.gap.duration
+){
+  # checks
+  if(isFALSE( inherits(sf.segments, "sf") )){
+    stop("sf.segments must be a sf object")
+  }
+  if(isFALSE( length(unique(sf::st_geometry_type(sf.segments))) == 1) ){
+    stop("sf.segments must include only one geometry type (POLYGON")
+  }
+  if(isFALSE( unique(sf::st_geometry_type(sf.segments)) == "POLYGON")){
+    stop("sf.segments geometry is not of type POLYGON")
+  }
+  if(isFALSE( length(flight.id) == nrow(sf.segments) )){
+    stop("flight.id must be of the same length as sf.segments")
+  }
+  if(isFALSE( all( is.character(flight.day), is.character(survey.start.hour), is.character(col.trans.id) ) )){
+    stop("flight.day, survey.start.hour and col.trans.id must be character")
+  }
+  if(isFALSE( all( is.numeric(flight.speed), is.numeric(intertransect.gap.duration) ) )){
+    stop("flight.speed and intertransect.gap.duration must be numeric")
+  }
+  if(isFALSE( col.trans.id %in% names(sf.segments) )){
+    stop("col.trans.id must be a column of sf.segments")
+  }
+  
+  # function
+  seg <- sf.segments
+  seg$transect.id <- seg %>% dplyr::pull(col.trans.id)
+  seg$flight.id <- flight.id
+  
+  seg_ord <- seg %>% dplyr::arrange(flight.id)
+  
+  # compute date time for all segments iteratively, following the flight order
+  for(i in 1:length(flight.id)){
+    if(i == 1) {
+      seg_i <- seg_ord |> subset(flight.id == i) |> sf::st_drop_geometry()
+      # if first seg of the first transect, start time is the starting time of the full survey. The duration of a seg is retrieved from the seg length and the survey speed, from which endtime is computed
+      starttime <- lubridate::ymd_hms(paste(flight.day, survey.start.hour, sep = " "))
+      seg.duration <- (seg_i[, "SegLengthKm"]/flight.speed)*60*60
+      endtime <- starttime + lubridate::seconds(seg.duration)
+      
+      seg_ord[which(seg_ord$flight.id == i), "start.time"] <- starttime
+      seg_ord[which(seg_ord$flight.id == i), "end.time"] <- endtime
+    } 
+    if(i != 1){
+      seg_i <- seg_ord |> subset(flight.id == i) |> sf::st_drop_geometry()
+      prev_seg <- seg_ord |> subset(flight.id == i-1) |> sf::st_drop_geometry()
+      
+      if( seg_i[, "transect.id"] != prev_seg[, "transect.id"] ){
+        # if a new transect is started, the delay between the current segment and the previous is set to intransect.gap.duration
+        starttime <- prev_seg[, "end.time"] + lubridate::seconds(intertransect.gap.duration)
+        seg.duration <- (seg_i[, "SegLengthKm"]/flight.speed)*60*60
+        endtime <- starttime + lubridate::seconds(seg.duration)
+        
+        seg_ord[which(seg_ord$flight.id == i), "start.time"] <- starttime
+        seg_ord[which(seg_ord$flight.id == i), "end.time"] <- endtime
+      } else {
+        # otherwise, starttime is computed as the endtime of the previous seg + half a second (to avoid overlap)
+        starttime <- prev_seg[, "end.time"] + lubridate::seconds(0.5)
+        seg.duration <- (seg_i[, "SegLengthKm"]/flight.speed)*60*60
+        endtime <- starttime + lubridate::seconds(seg.duration)
+        
+        seg_ord[which(seg_ord$flight.id == i), "start.time"] <- starttime
+        seg_ord[which(seg_ord$flight.id == i), "end.time"] <- endtime
+      }
+    }
+  }
+  return(seg_ord)
+}
+```
+
+```{r examples-assign_flight_plan}
+surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 5, end.x = 85, start.y = 5, end.y = 85,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 1, 
+                             buffer = TRUE, buffer.width = 0.2
+                             )
+
+# Here, set up a flight plan where the first transect is flown in a given 
+# direction, the second in the other direction etc, so that the aircraft 
+# does not need to go all the way to the other side of the survey area 
+# to start a new transect. The intransect.gap.duration is thus set to 1 minute, 
+# a the flight speed to 160 km/h (the classical speed for aerial surveys). 
+# in that case, the survey duration for a single segment is 22.5 seconds. 
+flight.id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
+                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
+
+# assign the time periods to each segment
+flight_plan <- assign_flight_plan(
+    sf.segments = surv$buffered.segments,
+    flight.id = flight.id,
+    col.trans.id = "transect",
+    flight.day = "2022-02-08", 
+    survey.start.hour = "06:00:00",
+    flight.speed = 160,
+    intertransect.gap.duration = 60
+)
+
+# plot to check everything is ok
+library(ggplot2)
+ggplot(flight_plan) +
+    geom_sf(aes(fill = start.time),
+            color = "black", size = 0.2) +
+    scale_fill_datetime(low = "#8073ac", high = "#fdb863") +
+    theme_bw() + theme(panel.grid = element_blank()) +
+    labs(fill = "Hour", limits = c("06:00", "16:16"), x = "x", y = "y")+
+    coord_sf(xlim = c(0,90), ylim = c(0,90))
+
+ggplot(flight_plan) +
+    geom_sf(aes(fill = flight.id),
+            color = "black", size = 0.2)
+```
+
+```{r tests-assign_flight_plan}
+test_that("assign_flight_plan works", {
+  
+  surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 5, end.x = 85, start.y = 5, end.y = 85,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 1, 
+                             buffer = TRUE, buffer.width = 0.2
+                             )
+
+  flight.id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
+                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
+
+  expect_error(
+    object = assign_flight_plan(
+    sf.segments = surv$buffered.segments,
+    flight.id = flight.id,
+    col.trans.id = "toto",
+    flight.day = "2022-02-08", 
+    survey.start.hour = "06:00:00",
+    flight.speed = 160,
+    intertransect.gap.duration = 60),
+    regexp = "col.trans.id must be a column of sf.segments"
+  )
+  
+  expect_error(
+    object = assign_flight_plan(
+    sf.segments = surv$buffered.segments,
+    flight.id = flight.id,
+    col.trans.id = "transect",
+    flight.day = 2022, 
+    survey.start.hour = "06:00:00",
+    flight.speed = 160,
+    intertransect.gap.duration = 60),
+    regexp = "flight.day, survey.start.hour and col.trans.id must be character"
+  )
+  
+  expect_error(
+    object = assign_flight_plan(
+    sf.segments = surv$segments,
+    flight.id = flight.id,
+    col.trans.id = "transect",
+    flight.day = "2022-02-08", 
+    survey.start.hour = "06:00:00",
+    flight.speed = 160,
+    intertransect.gap.duration = 60),
+    regexp = "sf.segments geometry is not of type POLYGON"
+  )
+})
+
+```
+
+
+
+# 3. Simulate survey on fixed individual
 
 This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by `simul_spat`. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected).  
 
