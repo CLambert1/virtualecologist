@@ -7,59 +7,10 @@ editor_options:
 
 ```{r development, include=FALSE}
 library(testthat)
+
 grid <- create_grid()
 env <- generate_env_layer(grid = grid)
-
-### 1 - Generate virtual survey plan -------------------------------------------
-# set scale to 1 = 2 km to construct the segments
-
-# define bounding box
-bbx <- as(raster::extent(c(5,85,5,85)), "SpatialPolygons")
-
-# create transects
-vect.y <- seq(5, 85, by = 4) # transects espac?s de 2*4 = 8 km
-list_coord <- lapply(seq_along(vect.y), function(i) { rbind( c(5, vect.y[i]), c(85, vect.y[i])) })
-
-transects <- raster::spLines(list_coord) |> sf::st_as_sf() |> sf::st_cast(to ="LINESTRING") |>
-    dplyr::mutate(length = 80, id = 1:21)
-
-terra::plot(env$rasters$sim1)
-lines(sf::as_Spatial(transects))
-
-# segmentize
-segments <- NULL
-idTransects <- unique(transects$id)
-
-for(i in 1:length(idTransects)){
-    trans <- transects |> sf::st_as_sf() |> subset(id == idTransects[i]) |>
-        sf::as_Spatial()
-    seg <- SegmentSpatialLines(trans, length = 1, merge.last = FALSE)
-    seg <- sf::st_as_sf(seg)
-
-    # seg <- Merge(seg)
-
-    seg_df <- sf::st_as_sf(
-        data.frame(
-            id = 1:nrow(seg),
-            Shape = seg,
-            transect = trans$id,
-            TransLengthKm = as.numeric(round(trans$length,0)),
-            SegLengthKm = as.numeric(round(st_length(seg),0))
-        ))
-    seg_df <- seg_df |>
-        mutate(seg.id = qdapTools::id(seg_df, prefix= paste(trans$id, "_Seg_", sep="")))
-
-    segments <- rbind(segments, seg_df)
-}
-# write_sf(segments |> sf::st_as_sf(), dsn = paste(outdir, "Survey_segments.shp", sep = "/"))
-
-# buffer around segments
-buf <- segments |> sf::st_as_sf() |> sf::st_buffer(dist = 0.5, endCapStyle = "FLAT")
-
-terra::plot(env$rasters$sim1)
-lines(sf::as_Spatial(segments))
-
-
+sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
 
 ```
 
@@ -67,9 +18,6 @@ lines(sf::as_Spatial(segments))
 # Load already included functions if relevant
 pkgload::load_all(export_all = FALSE)
 ```
-
-
-# segmentize
     
 ```{r function-segmentize}
 ### Segmentize transects
@@ -144,6 +92,7 @@ MergeLast <- function(lst) {
 #'
 #' @importFrom sp Lines
 #' @importFrom sp Line
+#' @importFrom sp SpatialLines
 #'
 #' @return
 #'
@@ -151,7 +100,7 @@ SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE)
   stopifnot((length > 0 || n.parts > 0))
   id <- 0
   newlines <- list()
-  sl <- sf::as(sl, "SpatialLines")
+  sl <- as(sl, "SpatialLines")
   for (lines in sl@lines) {
     for (line in lines@Lines) {
       crds <- line@coords
@@ -168,7 +117,7 @@ SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE)
       }
     }
   }
-  return(SpatialLines(newlines))
+  return(sp::SpatialLines(newlines))
 }
 
 #' Title
@@ -213,37 +162,365 @@ Merge <- function(segments) {
 ```
   
 
-# 1 Simulate a transect design
+# 1. Generate a transect design
 
-This design can be done with the *dssd* package (L Marshall, 2021) when working on real-world examples. The functions presented here, provide facilities to build a simple layout in a virtual space. The built layout will consist of parallel transects covering a given area in the virtual environment, spaced out by a given distance and segmentised by a given length. 
+This design can be done with the *dssd* package (L Marshall, 2021) when working on real-world examples. 
+
+The functions presented here provide facilities to build a simple layout. The built layout will consist of parallel transects covering a given area in the virtual environment, spaced out by a given distance and segmented by a given length. The layout can either be horizontal (the default) or vertical. The design can be generated in virtual or real space, but in the latter case, be cautious about the units (you should work with projected coordinates). 
 
 
-```{r function-flat_simulate_survey}
-#' flat_simulate_survey Title
+```{r function-generate_survey_plan}
+#' Generate a transect survey design
 #'
-#' @return 1
+#' This function builds a simple transect design layout, consisting of parallel transects covering a given area in the virtual environment, spaced out by a given distance. The layout can either be horizontal (the default) or vertical. The transects can be segmentized to a given length, and transects or segments can be buffered.
+#'
+#' @param bbx.xmin,bbx.xmax,bbx.ymin,bbx.ymax numeric. Limits of the bounding box the transects will be generated in
+#' @param start.x,end.x numeric. Start and end x coordinates of the transects
+#' @param start.y,end.y numeric. Start and end y coordinates of the transects
+#' @param space.out.factor numeric. Number of space units between transects
+#' @param type character. Either "horizontal" (the default) or "vertical
+#' @param segmentize Boolean. If TRUE, the transects are cut in smaller segments. Default to FALSE.
+#' @param merge.last.seg Boolean. Should the last segment of a transect be merged with the previous one? Default to FALSE
+#' @param seg.length numeric. Segment length.
+#' @param buffer Boolean. Should a buffer be drawn around transects or segments? If segmentize is TRUE, buffers are drawn around segments, if segmentize is FALSE, they are drawn around transects. 
+#' @param buffer.width numeric. Width of the buffer on each side of the segments or transects. 
+#'
+#' @importFrom raster spLines extent
+#' @importFrom sf st_as_sf st_cast as_Spatial st_length, st_buffer
+#' @importFrom qdapTools id
+#' @importFrom purrr reduce
+#' @importFrom magrittr %>%
+#'
+#' @return A named list. 
 #' @export
 #'
 #' @examples
-flat_simulate_survey <- function() {
-  1
+generate_survey_plan <- function(bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax,
+                                 start.x, end.x, start.y, end.y, space.out.factor,
+                                 type = "horizontal", 
+                                 segmentize = FALSE, merge.last.seg = FALSE, seg.length,
+                                 buffer = FALSE, buffer.width){
+  # check
+  if(isFALSE(type %in% c("horizontal", "vertical"))){
+    stop("type must either be horizontal or vertical")
+  }
+  if(isFALSE(all(is.numeric(bbx.xmin), is.numeric(bbx.xmax), is.numeric(bbx.ymin), is.numeric(bbx.ymax),
+                 is.numeric(start.x), is.numeric(end.x), is.numeric(start.y), is.numeric(end.y),
+                 is.numeric(space.out.factor)))){
+    stop("bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax, start.x, end.x, start.y, end.y, space.out.factor must all be numeric")
+  }
+  if(isFALSE(is.logical(segmentize))){
+    stop("segmentize must be Boolean")
+  } 
+  if(isTRUE(segmentize)){
+    if(isFALSE(is.logical(merge.last.seg))){
+      stop("merge.last.seg must be Boolean")
+    }
+    
+    if(isTRUE(is.null(seg.length))){
+      stop("seg.length must be provided if segmentize is TRUE")
+    } else {
+      if(isFALSE(is.numeric(seg.length))){
+        stop("seg.length must be numeric")
+      }
+    }
+  }
+  if(isFALSE(is.logical(buffer))){
+    stop("buffer must be Boolean")
+  }
+  if(isTRUE(buffer)){
+    if(isTRUE(is.null(buffer.width))){
+      stop("buffer.width must be provided if buffer is TRUE")
+    } else {
+      if(isFALSE(is.numeric(buffer.width))){
+        stop("buffer.width must be numeric")
+      }
+    }
+  }
+  
+  # define bounding box
+  bbx <- as(raster::extent(c(bbx.xmin,bbx.xmax,bbx.ymin,bbx.ymax)), "SpatialPolygons")
+  
+  # create transects
+  if(type == "horizontal"){
+    vect.y <- seq(start.y, end.y, by = space.out.factor) 
+    list_coord <- lapply(seq_along(vect.y), function(i) { rbind( c(start.x, vect.y[i]), c(end.x, vect.y[i])) })
+    transects <- raster::spLines(list_coord) |> sf::st_as_sf() |> sf::st_cast(to = "LINESTRING") |>
+        dplyr::mutate(length = (end.x - start.x))
+    transects$id <- 1:nrow(transects)
+  }
+  if(type == "vertical"){
+    vect.x <- seq(start.x, end.x, by = space.out.factor) 
+    list_coord <- lapply(seq_along(vect.x), function(i) { rbind( c(vect.x[i], start.y), c(vect.x[i], end.y)) })
+    transects <- raster::spLines(list_coord) |> sf::st_as_sf() |> sf::st_cast(to = "LINESTRING") |>
+        dplyr::mutate(length = (end.y - start.y))
+    transects$id <- 1:nrow(transects)
+  }
+
+  if(segmentize == TRUE){
+    idTransects <- unique(transects$id)
+    seg <- lapply(1:length(idTransects), function(i){
+      trans <- transects |> sf::st_as_sf() |> subset(id == idTransects[i]) |>
+          sf::as_Spatial()
+      seg <- SegmentSpatialLines(trans, length = seg.length, merge.last = merge.last.seg) |>
+        sf::st_as_sf(seg) %>%
+          dplyr::mutate(transect = trans$id,
+              TransLengthKm = as.numeric(round(trans$length,0)),
+              SegLengthKm = as.numeric(round(sf::st_length(.),0)),
+              seg.id = qdapTools::id(x = ., prefix = paste(trans$id, "_Seg_", sep ="")))
+  
+      return(seg)
+      }) |> purrr::reduce(sf:::rbind.sf) # %>% suppressWarnings(mapedit:::combine_list_of_sf(.))
+    
+    if(buffer == TRUE){
+      buf <- seg |> sf::st_as_sf() |> sf::st_buffer(dist = buffer.width, endCapStyle = "FLAT")
+      return(list(transects = transects, segments = seg, buffered.segments = buf, bbx = bbx))
+    } else{
+      return(list(transects = transects, segments = seg, bbx = bbx))
+    }
+  } else {
+    if(buffer == TRUE){
+      buf <- transects |> sf::st_as_sf() |> sf::st_buffer(dist = buffer.width, endCapStyle = "FLAT")
+      return(list(transects = transects, buffered.transects = buf, bbx = bbx))
+    } else {
+       return(list(transects = transects, bbx = bbx))
+    }    
+  }
 }
 ```
 
-```{r examples-flat_simulate_survey}
-flat_simulate_survey()
+```{r examples-generate_survey_plan}
+surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 2, 
+                             buffer = TRUE, buffer.width = 0.2
+                             )
+par(mfrow = c(2,2), mar = c(2.5,2.5,4,0.5))
+raster::plot(surv$bbx, axes = T, main = "bounding box")
+plot(sf::st_geometry(surv$transects), axes = T, main = "transects")
+plot(sf::st_geometry(surv$segments), axes = T, main = "segments")
+plot(sf::st_geometry(surv$buffered.segments), axes = T, main = "buffered seg")
 ```
 
-```{r tests-flat_simulate_survey}
-test_that("flat_simulate_survey works", {
-
+```{r tests-generate_survey_plan}
+test_that("generate_survey_plan works", {
+  
+  expect_error(
+    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = "b",
+                             buffer = TRUE, buffer.width = 0.2
+                             ),
+    regexp = "seg.length must be numeric"
+  )
+  
+  expect_error(
+    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 2,
+                             buffer = TRUE, buffer.width = "b"
+                             ),
+    regexp = "buffer.width must be numeric"
+  )
+  
+  expect_error(
+    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 2,
+                             buffer = "TRUE", buffer.width = 2
+                             ),
+    regexp = "buffer must be Boolean"
+  )
+  
+  expect_error(
+    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = "TRUE", seg.length = 2,
+                             buffer = TRUE, buffer.width = 2
+                             ),
+    regexp = "segmentize must be Boolean"
+  )
+  
+  expect_error(
+    object = generate_survey_plan(bbx.xmin = "5", bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 2,
+                             buffer = TRUE, buffer.width = 2
+                             ),
+    regexp = "bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax, start.x, end.x, start.y, end.y, space.out.factor must all be numeric"
+  )
 })
 ```
+
+
+# 2. Simulate survey on fixed individual
+
+This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by `simul_spat`. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected).  
+
+
+```{r function-detection_process}
+#' Detection process on spatial point process
+#'
+#' This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by `simul_spat`. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected). 
+#'
+#' @param pts sf object (points), the position of individuals to be surveyed
+#' @param transects sf object (lines), survey layout with transects or segments
+#' @param sigma numeric, effective strip half-width (in km, if in real space). If NULL (the default), strip-transect is implemented
+#' @param seg.id.col character, the name of the column in transects where the ids are stored
+#'
+#' @importFrom sf st_distance st_drop_geometry
+#' @importFrom glue glue
+#' @importFrom stats rbinom dnorm
+#'
+#' @return the pts dataframe (sf object) with additional columns: distance, distance_km (if in real space), segID (the closest transect or segment from the individual) and detected (1 if the individual is detected, 0 otherwise)
+#' @export
+#'
+#' @examples
+detection_process <- function(pts, 
+                              transects, 
+                              strip.transect = TRUE,
+                              sigma = NULL, 
+                              seg.id.col = NULL, 
+                              virtual.space = TRUE) {
+  if(isFALSE(all(inherits(pts, "sf"), inherits(transects, "sf")))){
+    stop("pts and transects must be sf objects")
+  }
+  if(isFALSE(length(unique(sf::st_geometry_type(pts))) == 1)){
+    stop("pts must include only one geometry type (POINT)")
+  }
+  if(isFALSE(unique(sf::st_geometry_type(pts)) == "POINT")){
+    stop("pts geometry is not of type POINT")
+  }
+  if(isFALSE(length(unique(sf::st_geometry_type(transects))) == 1)){
+    stop("transects must include only one geometry type (LINESTRING)")
+  }
+  if(isFALSE(unique(sf::st_geometry_type(transects)) == "LINESTRING")){
+    stop("transects geometry is not of type LINESTRING")
+  }
+  if(isTRUE(is.null(seg.id.col))){
+    stop("seg.id.col must be provided")
+  } else {
+    transects$segID <- sf::st_drop_geometry(transects[,seg.id.col]) %>% unlist()  
+  }
+  if(isFALSE(is.numeric(sigma))){
+    stop("sigma must be numeric")
+  }
+  
+  ## compute distance with st_distance
+  if(isTRUE(virtual.space)){
+    dist_mat <- sf::st_distance(
+                  x = pts,
+                  y = transects)
+    pts$distance <- apply(dist_mat, 1, min)
+    pts$closest.seg <- apply(dist_mat, 1, function(x) min(which(x == min(x, na.rm = TRUE))))
+    pts$segID <- transects$segID[pts$closest.seg]  
+    
+    ## detection process
+    if(isTRUE(strip.transect)) {
+      message(glue::glue("Strip-transect is used with a width of {sigma}"))
+      esw <- sigma
+      pts$detected <- ifelse(pts$distance <= esw, 1, 0)
+    } else {
+      message(glue::glue("Line-transect is used with a effective half width of {sigma}"))
+      esw <- (pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
+      proba <- exp(- (pts$distance)^2 / (2 * sigma * sigma))
+      pts$detected <- rbinom(nrow(pts), size = 1, prob = proba)
+    }
+    return(pts)
+  } else {
+    dist_mat <- sf::st_distance(
+                  x = pts,
+                  y = transects)
+    pts$distance <- apply(dist_mat, 1, min)
+    pts$distance_km <- pts$distance / 1e3
+    pts$closest.seg <- apply(dist_mat, 1, function(x) min(which(x == min(x, na.rm = TRUE))))
+    pts$segID <- transects$segID[pts$closest.seg]
+    
+    ## detection process
+    if(isTRUE(strip.transect)) {
+      message(glue::glue("Strip-transect is used with a width of {sigma}"))
+      esw <- sigma
+      pts$detected <- ifelse(pts$distance_km <= esw, 1, 0)
+    } else {
+      message(glue::glue("Line-transect is used with a effective half width of {sigma}"))
+      esw <- (pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
+      proba <- exp(- (pts$distance_km)^2 / (2 * sigma * sigma))
+      pts$detected <- rbinom(nrow(pts), size = 1, prob = proba)
+    }
+    return(pts)
+  }
+}
+```
+
+```{r examples-detection_process}
+grid <- create_grid()
+env <- generate_env_layer(grid = grid)
+sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
+surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 2, 
+                             buffer = TRUE, buffer.width = 0.2
+                             )
+
+pts <- detection_process(pts = sp, 
+                         transects = surv$segments, 
+                         strip.transect = TRUE, 
+                         sigma = 0.2, 
+                         virtual.space = TRUE,
+                         seg.id.col = "seg.id")
+plot(sp$x, sp$y)
+# plot(sf::st_geometry(surv$buffered.segments), border = "pink", color = NA, add = T)
+plot(sf::st_geometry(surv$segments), col = "red", add = T)
+points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), axes = T, pch = 20, col = "blue")
+```
+
+```{r tests-detection_process}
+test_that("detection_process works", {
+  grid <- create_grid()
+  env <- generate_env_layer(grid = grid)
+  sp <- suppressWarnings(simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F))
+  surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
+                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
+                             space.out.factor = 4, segmentize = TRUE, seg.length = 2, 
+                             buffer = TRUE, buffer.width = 0.2
+                             )
+  
+  expect_error(
+    object = detection_process(pts = sp, 
+                         transects = surv$segments, 
+                         strip.transect = TRUE, 
+                         sigma = 0.2, 
+                         virtual.space = TRUE),
+    regexp = "seg.id.col must be provided")
+  
+  expect_error(
+    object = detection_process(pts = "sp", 
+                         transects = surv$segments, 
+                         strip.transect = TRUE, 
+                         sigma = 0.2, 
+                         virtual.space = TRUE),
+    regexp = "pts and transects must be sf objects")
+  
+  expect_error(
+    object = detection_process(pts = sp, 
+                         transects = sp, 
+                         strip.transect = TRUE, 
+                         sigma = 0.2, 
+                         virtual.space = TRUE),
+    regexp = "transects geometry is not of type LINESTRING")
+} )
+```
+
+
+# 3. Simulate survey on moving individuals
+
+
+
 
 
 ```{r development-inflate, eval=FALSE}
 # Run but keep eval=FALSE to avoid infinite loop
 # Execute in the console directly
-fusen::inflate(flat_file = "dev/flat_flat_simulate_survey.Rmd", vignette_name = "Go further")
+fusen::inflate(flat_file = "dev/flat_simulate_survey.Rmd", vignette_name = "Simulate survey")
 ```
 
