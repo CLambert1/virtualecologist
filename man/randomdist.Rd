@@ -12,6 +12,9 @@ randomdist(n, shape, rate)
 
 \item{rate}{an alternative way to specify the scale.}
 }
+\value{
+n random step lengths
+}
 \description{
 Return random step lengths
 }

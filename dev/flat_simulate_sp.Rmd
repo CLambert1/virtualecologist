@@ -24,7 +24,7 @@ pkgload::load_all(export_all = FALSE)
 
 # Create a custom projection
 
-The upcoming analyses necessitates working in a projected environment. Because we are in a virtual environment, we must define a custom projection. This is what does `custom_proj()`.
+The upcoming analyses necessitates working in a projected environment. Because we are in a virtual environment, we must define a custom projection. This is what does \code{\link{custom_proj()}}.
     
 ```{r function-custom_proj}
 #' Set up a custom projection for virtual environment
@@ -180,7 +180,7 @@ rpoispp_custom <- function (lambda, lmax = NULL, win = spatstat.geom::owin(), ..
 
 # Simulate spatial point process
 
-Generates a spatial point process from a reference map, using Inhomogeneous Poisson Point Process with spatstat's IPP. The intensity of the process is proportional to this reference map, and the final number of individuals in the population is provided by N. Several runs can be simulated at the same time. 
+\code{\link{simul_spat}} generates a spatial point process from a reference map, using Inhomogeneous Poisson Point Process with spatstat's IPP. The intensity of the process is proportional to this reference map, and the final number of individuals in the population is provided by N. Several runs can be simulated at the same time. 
 
 To do : add an id to each generated obs (only done when n_sim = 1)
 

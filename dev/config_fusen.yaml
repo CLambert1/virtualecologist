@@ -54,15 +54,24 @@ flat_simulate_sp.Rmd:
     check: true
     document: true
     overwrite: ask
-flat_utils.Rmd:
-  path: dev/flat_utils.Rmd
+flat_simulate_survey.Rmd:
+  path: dev/flat_simulate_survey.Rmd
   state: active
-  R: R/.R
-  tests: []
-  vignettes: []
+  R:
+  - R/assign_flight_plan.R
+  - R/createsegment.R
+  - R/detection_process.R
+  - R/generate_survey_plan.R
+  - R/launch_survey_on_movement.R
+  tests:
+  - tests/testthat/test-generate_survey_plan.R
+  - tests/testthat/test-assign_flight_plan.R
+  - tests/testthat/test-detection_process.R
+  - tests/testthat/test-launch_survey_on_movement.R
+  vignettes: vignettes/simulate-survey.Rmd
   inflate:
-    flat_file: dev/flat_utils.Rmd
-    vignette_name: .na
+    flat_file: dev/flat_simulate_survey.Rmd
+    vignette_name: Simulate survey
     open_vignette: true
     check: true
     document: true

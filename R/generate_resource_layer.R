@@ -6,13 +6,13 @@
 #' @param env_layers Environmental layers to build the resource from. Can either be a data frame (including map coordinates and environmental layer values) or a SpatRast. 
 #' @param coordinate_fields If env_layers is a data frame, the fields corresponding to the map coordinates (e.g. c("x", "y"), the default)
 #' @param norm Should the resource layer be normalized? 
-#' @param return.rasters Should the function returns the resource as SpatRast in addition to the data frame?
+#' @param return_rasters Should the function returns the resource as SpatRast in addition to the data frame?
 
 #' @importFrom dplyr select
 #' @importFrom purrr reduce
 #' @importFrom terra rast
 #' 
-#' @return Returns a data frame with the suitability layer, as well as SpatRast is return.rasters = TRUE
+#' @return Returns a data frame with the suitability layer, as well as SpatRast is return_rasters = TRUE
 #' @export
 #'
 #' @examples
@@ -29,7 +29,7 @@
 #' cdt2 <- generate_env_layer(grid = grid, n = 3)$dataframe |> dplyr::rename(lon = x, lat = y)
 #' str(generate_resource_layer(env_layers = cdt2, coordinate_fields = c("lon", "lat"),
 #'                             beta = c(2, -1.5, 3)) )
-generate_resource_layer <- function(beta, env_layers, coordinate_fields = c("x", "y"), norm = TRUE, return.rasters = TRUE){
+generate_resource_layer <- function(beta, env_layers, coordinate_fields = c("x", "y"), norm = TRUE, return_rasters = TRUE){
   # check input format
   if(class(env_layers) %!in% c("SpatRaster", "data.frame")){
     stop("env_layers must be of class SpatRast or data.frame")
@@ -40,6 +40,7 @@ generate_resource_layer <- function(beta, env_layers, coordinate_fields = c("x",
   if(inherits(env_layers, "data.frame")){
     xy <- env_layers[, coordinate_fields]
     env_cdts <- env_layers |> dplyr::select(!(dplyr::all_of(coordinate_fields))) }  
+  
   if(inherits(env_layers, "SpatRaster")){
     xy <- as.data.frame(env_layers, xy = T)[, c("x", "y")]
     env_cdts <- as.data.frame(env_layers) }
@@ -55,27 +56,27 @@ generate_resource_layer <- function(beta, env_layers, coordinate_fields = c("x",
   })  |> purrr::reduce(`+`) 
   # same but farr longer: rsce |> dplyr::rowwise() |> dplyr::mutate(Suitability = sum(dplyr::c_across(dplyr::contains("sim"))))
   
-  resource.layer <- cbind(xy, suitability)
+  resource_layer <- cbind(xy, suitability)
     
   # normalize the result or not?
   if(norm == TRUE){
-    resource.layer$suitability <- normalize(resource.layer$suitability)
+    resource_layer$suitability <- normalize(resource_layer$suitability)
     
-    if(return.rasters == TRUE){
-      rsce.rast <- terra::rast(x = resource.layer, type = "xyz")
+    if(return_rasters == TRUE){
+      rsce_rast <- terra::rast(x = resource_layer, type = "xyz")
       
-      return(list(dataframe = resource.layer, rasters = rsce.rast))
+      return(list(dataframe = resource_layer, rasters = rsce_rast))
     } else {
-      return(resource.layer)
+      return(resource_layer)
     }
   } else {
-    if(return.rasters == TRUE){
-      rsce.rast <- terra::rast(x = resource.layer, type = "xyz")
+    if(return_rasters == TRUE){
+      rsce_rast <- terra::rast(x = resource_layer, type = "xyz")
       
-      return(list(dataframe = resource.layer, rasters = rsce.rast))
+      return(list(dataframe = resource_layer, rasters = rsce_rast))
     } else {
       
-      return(resource.layer)
+      return(resource_layer)
     }
   }
 }

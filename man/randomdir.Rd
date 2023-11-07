@@ -11,6 +11,9 @@ randomdir(n, mu, kappa)
 
 \item{mu}{mean direction of the distribution as a \code{circular} object.}
 }
+\value{
+n random angles
+}
 \description{
 Return random direction angles
 }

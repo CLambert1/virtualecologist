@@ -83,8 +83,8 @@ usethis::use_news_md()
 
 ```{r, eval=FALSE}
 # add data-raw/ dans le dossier du package - use once
-# usethis::use_data_raw() # creer le dossier et DATASET.R ; ensuite créer des scripts R pour les transformer
-# simulation tools so no need for input data
+usethis::use_data_raw() # creer le dossier et DATASET.R ; ensuite créer des scripts R pour les transformer
+
 ```
 
 
@@ -98,16 +98,12 @@ usethis::use_pipe()
 # package-level documentation
 usethis::use_package_doc()
 
-# update dependencies
-usethis::use_import_from("stats", "predict")
-usethis::use_import_from("gstat", "gstat")
-usethis::use_import_from("gstat", "vgm")
-usethis::use_import_from("terra", "predict")
-usethis::use_import_from("sp", "coordinates")
-usethis::use_import_from("dplyr", "select")
-usethis::use_import_from("purrr", "reduce")
-# unecessary if use
+# update dependancies etc
 attachment::att_amend_desc()
+
+# create z vignette for the whole package
+usethis::use_vignette("simtools")
+
 
 # GitHub
 # Add your credentials for GitHub
@@ -121,7 +117,7 @@ usethis::use_github()
 # Set Continuous Integration
 # _GitHub (included in `init_share_on_github()`)
 usethis::use_github_action_check_standard()
-usethis::use_github_action("pkgdown")
+usethis::use_github_action("pkgdown") # déployement en ligne du site sur une Github page via GutHub Action (publie dans une branche 'gh_pages')
 usethis::use_github_action("test-coverage")
 # _GitLab
 gitlabr::use_gitlab_ci(type = "check-coverage-pkgdown")

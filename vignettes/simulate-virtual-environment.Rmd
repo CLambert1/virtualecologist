@@ -26,7 +26,7 @@ library(simtools)
 
 # Create the grid
 
-Create the grid structuring the virtual environment. By default, the function creates a grid spanning 0 to 90° in both longitude and latitude, with steps of 0.5. 
+Create the grid structuring the virtual environment. By default, \code{\link{create_grid}} the function creates a grid spanning 0 to 90° in both longitude and latitude, with steps of 0.5. 
 
 
   
@@ -41,7 +41,7 @@ grid <- create_grid()
 
 # Generating environmental layers
 
-This function creates several environmental layers using Gaussian simulation from the grid locations. The number of layers generated is set by n. The generated layers can be normalised, and be returned either only as data frame or both in data frame and raster formats (SpatRast). 
+The \code{\link{generate_env_layer}} function creates several environmental layers using Gaussian simulation from the grid locations. The number of layers generated is set by n. The generated layers can be normalised, and be returned either only as data frame or both in data frame and raster formats (SpatRast). 
 
 
 
@@ -50,12 +50,12 @@ This function creates several environmental layers using Gaussian simulation fro
 ```{r example-generate_env_layer}
 grid <- create_grid()
 
-str(generate_env_layer(norm = FALSE, return.rasters = FALSE, grid = grid))
-str(generate_env_layer(norm = TRUE, return.rasters = FALSE, grid = grid))
+str(generate_env_layer(norm = FALSE, return_rasters = FALSE, grid = grid))
+str(generate_env_layer(norm = TRUE, return_rasters = FALSE, grid = grid))
 
 library(terra)
-plot(generate_env_layer(norm = TRUE, return.rasters = TRUE, grid = grid)$rasters)
-plot(generate_env_layer(norm = FALSE, return.rasters = TRUE, grid = grid)$rasters)
+plot(generate_env_layer(norm = TRUE, return_rasters = TRUE, grid = grid)$rasters)
+plot(generate_env_layer(norm = FALSE, return_rasters = TRUE, grid = grid)$rasters)
 ```
 
   
@@ -65,7 +65,7 @@ plot(generate_env_layer(norm = FALSE, return.rasters = TRUE, grid = grid)$raster
 
 # Build the suitability layer
 
-This function permits building a suitability layer from a set of environmental layers and beta parameters to be leveraged with. It mimics a basic resource selection function, where a given environmental layer is simply scaled by the beta parameter (env*beta) and several leveraged env layers are additively combined. For more elaborate procedures, see the package virtualspecies. 
+The \code{\link{generate_resource_layer}} function permits building a suitability layer from a set of environmental layers and beta parameters to be leveraged with. It mimics a basic resource selection function, where a given environmental layer is simply scaled by the beta parameter (env*beta) and several leveraged env layers are additively combined. For more elaborate procedures, see the package \pkg{virtualspecies}. 
 
     
 

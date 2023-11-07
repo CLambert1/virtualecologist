@@ -9,8 +9,8 @@ potential_position_func(
   bearing,
   step,
   from,
-  colony.location,
-  resource.layer
+  colony_location,
+  resource_layer
 )
 }
 \arguments{
@@ -22,7 +22,7 @@ potential_position_func(
 
 \item{from}{data.frame including Lon and Lat fields and stepID of the point of origin}
 
-\item{colony.location}{data.frame vector with lon and lat position of the colony}
+\item{colony_location}{data.frame vector with lon and lat position of the colony}
 
 \item{resource.layer}{SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)}
 }
@@ -34,9 +34,9 @@ Identify potential next positions
 }
 \examples{
 from <- data.frame(Lon = 1, Lat = 2, toto = 5)
-colony.location <- data.frame(Lon = 2, Lat = 5)
+colony_location <- data.frame(Lon = 2, Lat = 5)
 cdt <- generate_env_layer(grid = create_grid(), n = 1)$rasters
 potential_position_func(n = 10, from = from, 
-                        colony.location = colony.location, resource.layer = cdt, 
+                        colony_location = colony_location, resource_layer = cdt, 
                         bearing = c(90,10), step = c(4.5, 3))
 }

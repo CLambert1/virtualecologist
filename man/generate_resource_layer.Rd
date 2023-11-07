@@ -9,7 +9,7 @@ generate_resource_layer(
   env_layers,
   coordinate_fields = c("x", "y"),
   norm = TRUE,
-  return.rasters = TRUE
+  return_rasters = TRUE
 )
 }
 \arguments{
@@ -21,10 +21,10 @@ generate_resource_layer(
 
 \item{norm}{Should the resource layer be normalized?}
 
-\item{return.rasters}{Should the function returns the resource as SpatRast in addition to the data frame?}
+\item{return_rasters}{Should the function returns the resource as SpatRast in addition to the data frame?}
 }
 \value{
-Returns a data frame with the suitability layer, as well as SpatRast is return.rasters = TRUE
+Returns a data frame with the suitability layer, as well as SpatRast is return_rasters = TRUE
 }
 \description{
 Resource selection function

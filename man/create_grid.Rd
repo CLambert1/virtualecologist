@@ -9,8 +9,8 @@ create_grid(
   ymax = 90,
   xmin = 0,
   xmax = 90,
-  step.x = 0.5,
-  step.y = 0.5
+  step_x = 0.5,
+  step_y = 0.5
 )
 }
 \arguments{
@@ -22,9 +22,9 @@ create_grid(
 
 \item{xmax}{Maximum latitude (default to 90)}
 
-\item{step.x}{Longitude steps to be used to generate points (default to 0.5)}
+\item{step_x}{Longitude steps to be used to generate points (default to 0.5)}
 
-\item{step.y}{Latitude steps to be used to generate points (default to 0.5)}
+\item{step_y}{Latitude steps to be used to generate points (default to 0.5)}
 }
 \value{
 A grid in dataframe format.

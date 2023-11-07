@@ -6,7 +6,7 @@
 #'
 #' @importFrom circular rwrappednormal 
 #'
-#' @return
+#' @return n random angles
 #' @export
 #'
 randomdir <- function(n,mu,kappa){
@@ -22,10 +22,9 @@ randomdir <- function(n,mu,kappa){
 #'
 #' @importFrom stats rgamma 
 #'
-#' @return
+#' @return n random step lengths
 #' @export
 #'
-#' @examples
 randomdist <- function(n, shape, rate){
   out <- stats::rgamma(n, shape, rate)
   return(out)

@@ -7,6 +7,8 @@ Authors@R:
 Description: Includes a suite of tools to simulate virtual ecological
     systems, from environment, to animals and surveys.
 License: MIT + file LICENSE
+Depends: 
+    R (>= 2.10)
 Imports: 
     circular,
     dplyr,
@@ -14,7 +16,10 @@ Imports:
     glue,
     gstat,
     lubridate,
+    magrittr,
     purrr,
+    qdapTools,
+    raster,
     sf,
     sp,
     spatstat,
@@ -37,5 +42,6 @@ VignetteBuilder:
     knitr
 Config/fusen/version: 0.5.2
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

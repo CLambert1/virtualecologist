@@ -8,15 +8,6 @@ editor_options:
 ```{r development, include=FALSE}
 library(testthat)
 
-grid <- create_grid()
-env <- generate_env_layer(grid = grid)
-sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
-
-surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 5, end.x = 85, start.y = 5, end.y = 85,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 1, 
-                             buffer = TRUE, buffer.width = 0.2
-                             )
 
 ```
 
@@ -27,8 +18,14 @@ pkgload::load_all(export_all = FALSE)
     
 ```{r function-segmentize}
 ### Segmentize transects
-### Author : Auriane Virgili (auriane.virgili@univ-lr.fr)
+### 
 
+#' Author: Auriane Virgili
+#' @param coords 
+#' @param from 
+#' @param to 
+#'
+#'
 CreateSegment <- function(coords, from, to) {
   distance <- 0
   coordsOut <- c()
@@ -57,6 +54,12 @@ CreateSegment <- function(coords, from, to) {
   return(coordsOut)
 }
 
+#' Author: Auriane Virgili
+#'
+#' @param coords 
+#' @param length 
+#' @param n.parts 
+#'
 CreateSegments <- function(coords, length = 0, n.parts = 0) {
   stopifnot((length > 0 || n.parts > 0))
   # calculate total length line
@@ -89,7 +92,7 @@ MergeLast <- function(lst) {
   return(lst)
 }
 
-#' Title
+#' Author: Auriane Virgili
 #'
 #' @param sl a spatial line object
 #' @param length length to segmentize
@@ -99,8 +102,6 @@ MergeLast <- function(lst) {
 #' @importFrom sp Lines
 #' @importFrom sp Line
 #' @importFrom sp SpatialLines
-#'
-#' @return
 #'
 SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE) {
   stopifnot((length > 0 || n.parts > 0))
@@ -126,22 +127,20 @@ SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE)
   return(sp::SpatialLines(newlines))
 }
 
-#' Title
+#' Author: Auriane Virgili
 #'
 #' @param segments a sf object
 #'
-#' @importFrom sf st_length
-#' @importFrom sf st_union
+#' @importFrom sf st_length st_union
 #' 
 #' @return a sf object
-#'
 Merge <- function(segments) {
   
   n <- as.numeric(nrow(segments))
   
   if (n > 2 && as.numeric(sf::st_length(segments$geometry[n])) < 3000){
     
-    corr <- segments[(n-1):n,] %>% summarize(geometry = sf::st_union(geometry)) 
+    corr <- segments[(n-1):n,] |> summarize(geometry = sf::st_union(geometry)) 
     
     segments_corr <- rbind(segments[1:(n-2),], corr)
     
@@ -151,7 +150,7 @@ Merge <- function(segments) {
   
   else if (n == 2 && as.numeric(sf::st_length(segments$geometry[n])) < 3000){
     
-    corr <- segments[(n-1):n,] %>% summarize(geometry = sf::st_union(geometry)) 
+    corr <- segments[(n-1):n,] |> summarize(geometry = sf::st_union(geometry)) 
     
     segments_corr <- corr
     
@@ -168,11 +167,28 @@ Merge <- function(segments) {
 ```
   
 
+    
+```{r function-detection_functions}
+#' Half-normal detection function
+#' 
+#' 
+detfunc_hn <- function(x, sigma) {return(exp(-((x/sigma)^2)/2))}
+
+#' Hazard rate detection function
+#' 
+#' 
+detfunc_hr <- function(x, sigma, b) {return( 1-exp(-(x/sigma)^(-b)) )}
+
+```
+  
+
+
+
 # 1. Generate a transect design
 
-This design can be done with the *dssd* package (L Marshall, 2021) when working on real-world examples. 
+This design can be done with the \pkg{dssd} package (L Marshall, 2021) when working on real-world examples. 
 
-The functions presented here provide facilities to build a simple layout. The built layout will consist of parallel transects covering a given area in the virtual environment, spaced out by a given distance and segmented by a given length. The layout can either be horizontal (the default) or vertical. The design can be generated in virtual or real space, but in the latter case, be cautious about the units (you should work with projected coordinates). 
+The \code{\link{generate_survey_plan}} function presented here provide facilities to build a simple layout. The built layout will consist of parallel transects covering a given area in the virtual environment, spaced out by a given distance and segmented by a given length. The layout can either be horizontal (the default) or vertical. The design can be generated in virtual or real space, but in the latter case, be cautious about the units (you should work with projected coordinates). 
 
 
 ```{r function-generate_survey_plan}
@@ -180,16 +196,16 @@ The functions presented here provide facilities to build a simple layout. The bu
 #'
 #' This function builds a simple transect design layout, consisting of parallel transects covering a given area in the virtual environment, spaced out by a given distance. The layout can either be horizontal (the default) or vertical. The transects can be segmentized to a given length, and transects or segments can be buffered.
 #'
-#' @param bbx.xmin,bbx.xmax,bbx.ymin,bbx.ymax numeric. Limits of the bounding box the transects will be generated in
-#' @param start.x,end.x numeric. Start and end x coordinates of the transects
-#' @param start.y,end.y numeric. Start and end y coordinates of the transects
-#' @param space.out.factor numeric. Number of space units between transects
+#' @param bbx_xmin,bbx_xmax,bbx_ymin,bbx_ymax numeric. Limits of the bounding box the transects will be generated in
+#' @param start_x,end_x numeric. Start and end x coordinates of the transects
+#' @param start_y,end_y numeric. Start and end y coordinates of the transects
+#' @param space_out_factor numeric. Number of space units between transects
 #' @param type character. Either "horizontal" (the default) or "vertical
 #' @param segmentize Boolean. If TRUE, the transects are cut in smaller segments. Default to FALSE.
-#' @param merge.last.seg Boolean. Should the last segment of a transect be merged with the previous one? Default to FALSE
-#' @param seg.length numeric. Segment length.
+#' @param merge_last_seg Boolean. Should the last segment of a transect be merged with the previous one? Default to FALSE
+#' @param seg_length numeric. Segment length.
 #' @param buffer Boolean. Should a buffer be drawn around transects or segments? If segmentize is TRUE, buffers are drawn around segments, if segmentize is FALSE, they are drawn around transects. 
-#' @param buffer.width numeric. Width of the buffer on each side of the segments or transects. 
+#' @param buffer_width numeric. Width of the buffer on each side of the segments or transects. 
 #'
 #' @importFrom raster spLines extent
 #' @importFrom sf st_as_sf st_cast as_Spatial st_length, st_buffer
@@ -201,33 +217,33 @@ The functions presented here provide facilities to build a simple layout. The bu
 #' @export
 #'
 #' @examples
-generate_survey_plan <- function(bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax,
-                                 start.x, end.x, start.y, end.y, space.out.factor,
+generate_survey_plan <- function(bbx_xmin, bbx_xmax, bbx_ymin, bbx_ymax,
+                                 start_x, end_x, start_y, end_y, space_out_factor,
                                  type = "horizontal", 
-                                 segmentize = FALSE, merge.last.seg = FALSE, seg.length,
-                                 buffer = FALSE, buffer.width){
+                                 segmentize = FALSE, merge_last_seg = FALSE, seg_length,
+                                 buffer = FALSE, buffer_width){
   # check
   if(isFALSE(type %in% c("horizontal", "vertical"))){
     stop("type must either be horizontal or vertical")
   }
-  if(isFALSE(all(is.numeric(bbx.xmin), is.numeric(bbx.xmax), is.numeric(bbx.ymin), is.numeric(bbx.ymax),
-                 is.numeric(start.x), is.numeric(end.x), is.numeric(start.y), is.numeric(end.y),
-                 is.numeric(space.out.factor)))){
-    stop("bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax, start.x, end.x, start.y, end.y, space.out.factor must all be numeric")
+  if(isFALSE(all(is.numeric(bbx_xmin), is.numeric(bbx_xmax), is.numeric(bbx_ymin), is.numeric(bbx_ymax),
+                 is.numeric(start_x), is.numeric(end_x), is.numeric(start_y), is.numeric(end_y),
+                 is.numeric(space_out_factor)))){
+    stop("bbx_xmin, bbx_xmax, bbx_ymin, bbx_ymax, start_x, end_x, start_y, end_y, space_out_factor must all be numeric")
   }
   if(isFALSE(is.logical(segmentize))){
     stop("segmentize must be Boolean")
   } 
   if(isTRUE(segmentize)){
-    if(isFALSE(is.logical(merge.last.seg))){
-      stop("merge.last.seg must be Boolean")
+    if(isFALSE(is.logical(merge_last_seg))){
+      stop("merge_last_seg must be Boolean")
     }
     
-    if(isTRUE(is.null(seg.length))){
-      stop("seg.length must be provided if segmentize is TRUE")
+    if(isTRUE(is.null(seg_length))){
+      stop("seg_length must be provided if segmentize is TRUE")
     } else {
-      if(isFALSE(is.numeric(seg.length))){
-        stop("seg.length must be numeric")
+      if(isFALSE(is.numeric(seg_length))){
+        stop("seg_length must be numeric")
       }
     }
   }
@@ -235,31 +251,31 @@ generate_survey_plan <- function(bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax,
     stop("buffer must be Boolean")
   }
   if(isTRUE(buffer)){
-    if(isTRUE(is.null(buffer.width))){
-      stop("buffer.width must be provided if buffer is TRUE")
+    if(isTRUE(is.null(buffer_width))){
+      stop("buffer_width must be provided if buffer is TRUE")
     } else {
-      if(isFALSE(is.numeric(buffer.width))){
-        stop("buffer.width must be numeric")
+      if(isFALSE(is.numeric(buffer_width))){
+        stop("buffer_width must be numeric")
       }
     }
   }
   
   # define bounding box
-  bbx <- as(raster::extent(c(bbx.xmin,bbx.xmax,bbx.ymin,bbx.ymax)), "SpatialPolygons")
+  bbx <- as(raster::extent(c(bbx_xmin,bbx_xmax,bbx_ymin,bbx_ymax)), "SpatialPolygons")
   
   # create transects
   if(type == "horizontal"){
-    vect.y <- seq(start.y, end.y, by = space.out.factor) 
-    list_coord <- lapply(seq_along(vect.y), function(i) { rbind( c(start.x, vect.y[i]), c(end.x, vect.y[i])) })
+    vect_y <- seq(start_y, end_y, by = space_out_factor) 
+    list_coord <- lapply(seq_along(vect_y), function(i) { rbind( c(start_x, vect_y[i]), c(end_x, vect_y[i])) })
     transects <- raster::spLines(list_coord) |> sf::st_as_sf() |> sf::st_cast(to = "LINESTRING") |>
-        dplyr::mutate(length = (end.x - start.x))
+        dplyr::mutate(length = (end_x - start_x))
     transects$id <- 1:nrow(transects)
   }
   if(type == "vertical"){
-    vect.x <- seq(start.x, end.x, by = space.out.factor) 
-    list_coord <- lapply(seq_along(vect.x), function(i) { rbind( c(vect.x[i], start.y), c(vect.x[i], end.y)) })
+    vect_x <- seq(start_x, end_x, by = space_out_factor) 
+    list_coord <- lapply(seq_along(vect_x), function(i) { rbind( c(vect_x[i], start_y), c(vect_x[i], end_y)) })
     transects <- raster::spLines(list_coord) |> sf::st_as_sf() |> sf::st_cast(to = "LINESTRING") |>
-        dplyr::mutate(length = (end.y - start.y))
+        dplyr::mutate(length = (end_y - start_y))
     transects$id <- 1:nrow(transects)
   }
 
@@ -268,26 +284,26 @@ generate_survey_plan <- function(bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax,
     seg <- lapply(1:length(idTransects), function(i){
       trans <- transects |> sf::st_as_sf() |> subset(id == idTransects[i]) |>
           sf::as_Spatial()
-      seg <- SegmentSpatialLines(trans, length = seg.length, merge.last = merge.last.seg) |>
+      seg <- SegmentSpatialLines(trans, length = seg_length, merge.last = merge_last_seg) %>%
         sf::st_as_sf(seg) %>%
           dplyr::mutate(transect = trans$id,
               TransLengthKm = as.numeric(round(trans$length,0)),
               SegLengthKm = as.numeric(round(sf::st_length(.),0)),
-              seg.id = qdapTools::id(x = ., prefix = paste(trans$id, "_Seg_", sep ="")))
+              seg_id = qdapTools::id(x = ., prefix = paste(trans$id, "_Seg_", sep ="")))
   
       return(seg)
-      }) |> purrr::reduce(sf:::rbind.sf) # %>% suppressWarnings(mapedit:::combine_list_of_sf(.))
+      }) |> purrr::reduce(sf:::rbind.sf) # |> suppressWarnings(mapedit:::combine_list_of_sf(.))
     
     if(buffer == TRUE){
-      buf <- seg |> sf::st_as_sf() |> sf::st_buffer(dist = buffer.width, endCapStyle = "FLAT")
-      return(list(transects = transects, segments = seg, buffered.segments = buf, bbx = bbx))
+      buf <- seg |> sf::st_as_sf() |> sf::st_buffer(dist = buffer_width, endCapStyle = "FLAT")
+      return(list(transects = transects, segments = seg, buffered_segments = buf, bbx = bbx))
     } else{
       return(list(transects = transects, segments = seg, bbx = bbx))
     }
   } else {
     if(buffer == TRUE){
-      buf <- transects |> sf::st_as_sf() |> sf::st_buffer(dist = buffer.width, endCapStyle = "FLAT")
-      return(list(transects = transects, buffered.transects = buf, bbx = bbx))
+      buf <- transects |> sf::st_as_sf() |> sf::st_buffer(dist = buffer_width, endCapStyle = "FLAT")
+      return(list(transects = transects, buffered_transects = buf, bbx = bbx))
     } else {
        return(list(transects = transects, bbx = bbx))
     }    
@@ -296,64 +312,64 @@ generate_survey_plan <- function(bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax,
 ```
 
 ```{r examples-generate_survey_plan}
-surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 2, 
-                             buffer = TRUE, buffer.width = 0.2
+surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
+                             buffer = TRUE, buffer_width = 0.2
                              )
 par(mfrow = c(2,2), mar = c(2.5,2.5,4,0.5))
 raster::plot(surv$bbx, axes = T, main = "bounding box")
 plot(sf::st_geometry(surv$transects), axes = T, main = "transects")
 plot(sf::st_geometry(surv$segments), axes = T, main = "segments")
-plot(sf::st_geometry(surv$buffered.segments), axes = T, main = "buffered seg")
+plot(sf::st_geometry(surv$buffered_segments), axes = T, main = "buffered seg")
 ```
 
 ```{r tests-generate_survey_plan}
 test_that("generate_survey_plan works", {
   
   expect_error(
-    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = "b",
-                             buffer = TRUE, buffer.width = 0.2
+    object = generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = "b",
+                             buffer = TRUE, buffer_width = 0.2
                              ),
-    regexp = "seg.length must be numeric"
+    regexp = "seg_length must be numeric"
   )
   
   expect_error(
-    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 2,
-                             buffer = TRUE, buffer.width = "b"
+    object = generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 2,
+                             buffer = TRUE, buffer_width = "b"
                              ),
-    regexp = "buffer.width must be numeric"
+    regexp = "buffer_width must be numeric"
   )
   
   expect_error(
-    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 2,
-                             buffer = "TRUE", buffer.width = 2
+    object = generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 2,
+                             buffer = "TRUE", buffer_width = 2
                              ),
     regexp = "buffer must be Boolean"
   )
   
   expect_error(
-    object = generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = "TRUE", seg.length = 2,
-                             buffer = TRUE, buffer.width = 2
+    object = generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = "TRUE", seg_length = 2,
+                             buffer = TRUE, buffer_width = 2
                              ),
     regexp = "segmentize must be Boolean"
   )
   
   expect_error(
-    object = generate_survey_plan(bbx.xmin = "5", bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 2,
-                             buffer = TRUE, buffer.width = 2
+    object = generate_survey_plan(bbx_xmin = "5", bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 2,
+                             buffer = TRUE, buffer_width = 2
                              ),
-    regexp = "bbx.xmin, bbx.xmax, bbx.ymin, bbx.ymax, start.x, end.x, start.y, end.y, space.out.factor must all be numeric"
+    regexp = "bbx_xmin, bbx_xmax, bbx_ymin, bbx_ymax, start_x, end_x, start_y, end_y, space_out_factor must all be numeric"
   )
 })
 ```
@@ -361,94 +377,98 @@ test_that("generate_survey_plan works", {
 
 # 2. Assign a flight plan to the survey
 
-Before launching a survey, a flight plan must be set up, that is the order by which segments will be surveyed must be chosen. This function gets a segment objects (buffered segments from above), a vector providing the order by which segment table rows will be surveyed, the survey starting date and time, the speed of the aircraft (from which is calculated the survey duration of a single segment) and the duration of the transit period between two successive transects. The function automatically adds a one-second gap between two consecutive segments to avoid overlapping periods. 
+Before launching a survey, a flight plan must be set up, that is the order by which segments will be surveyed must be chosen. This is done with \code{\link{assign_flight_plan}}, which gets a segment objects (buffered segments from above), a vector providing the order by which segment table rows will be surveyed, the survey starting date and time, the speed of the aircraft (from which is calculated the survey duration of a single segment) and the duration of the transit period between two successive transects. The function automatically adds a one-second gap between two consecutive segments to avoid overlapping periods. 
 
 ```{r function-assign_flight_plan}
 #' Assign a flight plan to a survey design
 #'
-#' @param sf.segments sf object, segments to assign flight plan to
-#' @param flight.id numeric vector, giving the order by which the segments must be surveyed
-#' @param col.trans.id character, the column in sf.segments storing transect names
-#' @param flight.day character, the day the survey flight is carried out (ymd format: "2022-02-08")
-#' @param survey.start.hour character, the hour the survey is started (hms format: "06:00:00")
-#' @param flight.speed numeric, the speed at which a single segment is surveyed (in km/h)
-#' @param intransect.gap.duration numeric, the duration of the transit from a transect to the other (in seconds)
+#' @param sf_segments sf object, segments to assign flight plan to
+#' @param flight_id numeric vector, giving the order by which the segments must be surveyed
+#' @param col_trans_id character, the column in sf_segments storing transect names
+#' @param flight_day character, the day the survey flight is carried out (ymd format: "2022-02-08")
+#' @param survey_start_hour character, the hour the survey is started (hms format: "06:00:00")
+#' @param flight_speed numeric, the speed at which a single segment is surveyed (in km/h)
+#' @param intertransect_gap_duration numeric, the duration of the transit from a transect to the other (in seconds)
 #'
-#' @return a sf table with four additional columns (transect.id, flight.id, start.time and end.time) informing the period over which each segment is surveyed
+#' @importFrom sf st_geometry_type st_drop_geometry
+#' @importFrom dplyr pull arrange
+#' @importFrom lubridate ymd_hms seconds
+#'
+#' @return a sf table with four additional columns (transect_id, flight_id, start_time and end_time) informing the period over which each segment is surveyed
 #' @export
 #'
 #' @examples
 assign_flight_plan <- function(
-    sf.segments,
-    flight.id,
-    col.trans.id,
-    flight.day, 
-    survey.start.hour,
-    flight.speed,
-    intertransect.gap.duration
+    sf_segments,
+    flight_id,
+    col_trans_id,
+    flight_day, 
+    survey_start_hour,
+    flight_speed,
+    intertransect_gap_duration
 ){
   # checks
-  if(isFALSE( inherits(sf.segments, "sf") )){
-    stop("sf.segments must be a sf object")
+  if(isFALSE( inherits(sf_segments, "sf") )){
+    stop("sf_segments must be a sf object")
   }
-  if(isFALSE( length(unique(sf::st_geometry_type(sf.segments))) == 1) ){
-    stop("sf.segments must include only one geometry type (POLYGON")
+  if(isFALSE( length(unique(sf::st_geometry_type(sf_segments))) == 1) ){
+    stop("sf_segments must include only one geometry type (POLYGON")
   }
-  if(isFALSE( unique(sf::st_geometry_type(sf.segments)) == "POLYGON")){
-    stop("sf.segments geometry is not of type POLYGON")
+  if(isFALSE( unique(sf::st_geometry_type(sf_segments)) == "POLYGON")){
+    stop("sf_segments geometry is not of type POLYGON")
   }
-  if(isFALSE( length(flight.id) == nrow(sf.segments) )){
-    stop("flight.id must be of the same length as sf.segments")
+  if(isFALSE( length(flight_id) == nrow(sf_segments) )){
+    stop("flight_id must be of the same length as sf_segments")
   }
-  if(isFALSE( all( is.character(flight.day), is.character(survey.start.hour), is.character(col.trans.id) ) )){
-    stop("flight.day, survey.start.hour and col.trans.id must be character")
+  if(isFALSE( all( is.character(flight_day), is.character(survey_start_hour), is.character(col_trans_id) ) )){
+    stop("flight_day, survey_start_hour and col_trans_id must be character")
   }
-  if(isFALSE( all( is.numeric(flight.speed), is.numeric(intertransect.gap.duration) ) )){
-    stop("flight.speed and intertransect.gap.duration must be numeric")
+  if(isFALSE( all( is.numeric(flight_speed), is.numeric(intertransect_gap_duration) ) )){
+    stop("flight_speed and intertransect_gap_duration must be numeric")
   }
-  if(isFALSE( col.trans.id %in% names(sf.segments) )){
-    stop("col.trans.id must be a column of sf.segments")
+  if(isFALSE( col_trans_id %in% names(sf_segments) )){
+    stop("col_trans_id must be a column of sf_segments")
   }
   
   # function
-  seg <- sf.segments
-  seg$transect.id <- seg %>% dplyr::pull(col.trans.id)
-  seg$flight.id <- flight.id
+  seg <- sf_segments
+  seg$transect_id <- seg |> dplyr::pull(col_trans_id)
+  seg$flight_id <- flight_id
   
-  seg_ord <- seg %>% dplyr::arrange(flight.id)
+  seg_ord <- seg |> dplyr::arrange(flight_id)
   
   # compute date time for all segments iteratively, following the flight order
-  for(i in 1:length(flight.id)){
+  for(i in 1:length(flight_id)){
     if(i == 1) {
-      seg_i <- seg_ord |> subset(flight.id == i) |> sf::st_drop_geometry()
+      seg_i <- seg_ord |> subset(flight_id == i) |> sf::st_drop_geometry()
       # if first seg of the first transect, start time is the starting time of the full survey. The duration of a seg is retrieved from the seg length and the survey speed, from which endtime is computed
-      starttime <- lubridate::ymd_hms(paste(flight.day, survey.start.hour, sep = " "))
-      seg.duration <- (seg_i[, "SegLengthKm"]/flight.speed)*60*60
-      endtime <- starttime + lubridate::seconds(seg.duration)
+      starttime <- lubridate::ymd_hms(paste(flight_day, survey_start_hour, sep = " "))
+      seg_duration <- (seg_i[, "SegLengthKm"]/flight_speed)*60*60
+      endtime <- starttime + lubridate::seconds(seg_duration)
       
-      seg_ord[which(seg_ord$flight.id == i), "start.time"] <- starttime
-      seg_ord[which(seg_ord$flight.id == i), "end.time"] <- endtime
+      seg_ord[which(seg_ord$flight_id == i), "start_time"] <- starttime
+      seg_ord[which(seg_ord$flight_id == i), "end_time"] <- endtime
     } 
     if(i != 1){
-      seg_i <- seg_ord |> subset(flight.id == i) |> sf::st_drop_geometry()
-      prev_seg <- seg_ord |> subset(flight.id == i-1) |> sf::st_drop_geometry()
+      seg_i <- seg_ord |> subset(flight_id == i) |> sf::st_drop_geometry()
+      prev_seg <- seg_ord |> subset(flight_id == i-1) |> sf::st_drop_geometry()
       
-      if( seg_i[, "transect.id"] != prev_seg[, "transect.id"] ){
+      if( seg_i[, "transect_id"] != prev_seg[, "transect_id"] ){
         # if a new transect is started, the delay between the current segment and the previous is set to intransect.gap.duration
-        starttime <- prev_seg[, "end.time"] + lubridate::seconds(intertransect.gap.duration)
-        seg.duration <- (seg_i[, "SegLengthKm"]/flight.speed)*60*60
-        endtime <- starttime + lubridate::seconds(seg.duration)
+        starttime <- prev_seg[, "end_time"] + lubridate::seconds(intertransect_gap_duration)
+        seg_duration <- (seg_i[, "SegLengthKm"]/flight_speed)*60*60
+        endtime <- starttime + lubridate::seconds(seg_duration)
         
-        seg_ord[which(seg_ord$flight.id == i), "start.time"] <- starttime
-        seg_ord[which(seg_ord$flight.id == i), "end.time"] <- endtime
+        seg_ord[which(seg_ord$flight_id == i), "start_time"] <- starttime
+        seg_ord[which(seg_ord$flight_id == i), "end_time"] <- endtime
       } else {
         # otherwise, starttime is computed as the endtime of the previous seg + half a second (to avoid overlap)
-        starttime <- prev_seg[, "end.time"] + lubridate::seconds(0.5)
-        seg.duration <- (seg_i[, "SegLengthKm"]/flight.speed)*60*60
-        endtime <- starttime + lubridate::seconds(seg.duration)
+        starttime <- prev_seg[, "end_time"] + lubridate::seconds(0.5)
+        seg_duration <- (seg_i[, "SegLengthKm"]/flight_speed)*60*60
+        endtime <- starttime + lubridate::seconds(seg_duration)
         
-        seg_ord[which(seg_ord$flight.id == i), "start.time"] <- starttime
-        seg_ord[which(seg_ord$flight.id == i), "end.time"] <- endtime
+        seg_ord[which(seg_ord$flight_id == i), "start_time"] <- starttime
+        seg_ord[which(seg_ord$flight_id == i), "end_time"] <- endtime
       }
     }
   }
@@ -457,10 +477,10 @@ assign_flight_plan <- function(
 ```
 
 ```{r examples-assign_flight_plan}
-surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 5, end.x = 85, start.y = 5, end.y = 85,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 1, 
-                             buffer = TRUE, buffer.width = 0.2
+surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+                             buffer = TRUE, buffer_width = 0.2
                              )
 
 # Here, set up a flight plan where the first transect is flown in a given 
@@ -469,24 +489,24 @@ surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax
 # to start a new transect. The intransect.gap.duration is thus set to 1 minute, 
 # a the flight speed to 160 km/h (the classical speed for aerial surveys). 
 # in that case, the survey duration for a single segment is 22.5 seconds. 
-flight.id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
+flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
                    1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
 
 # assign the time periods to each segment
 flight_plan <- assign_flight_plan(
-    sf.segments = surv$buffered.segments,
-    flight.id = flight.id,
-    col.trans.id = "transect",
-    flight.day = "2022-02-08", 
-    survey.start.hour = "06:00:00",
-    flight.speed = 160,
-    intertransect.gap.duration = 60
+    sf_segments = surv$buffered_segments,
+    flight_id = flight_id,
+    col_trans_id = "transect",
+    flight_day = "2022-02-08", 
+    survey_start_hour = "06:00:00",
+    flight_speed = 160,
+    intertransect_gap_duration = 60
 )
 
 # plot to check everything is ok
 library(ggplot2)
 ggplot(flight_plan) +
-    geom_sf(aes(fill = start.time),
+    geom_sf(aes(fill = start_time),
             color = "black", size = 0.2) +
     scale_fill_datetime(low = "#8073ac", high = "#fdb863") +
     theme_bw() + theme(panel.grid = element_blank()) +
@@ -494,56 +514,56 @@ ggplot(flight_plan) +
     coord_sf(xlim = c(0,90), ylim = c(0,90))
 
 ggplot(flight_plan) +
-    geom_sf(aes(fill = flight.id),
+    geom_sf(aes(fill = flight_id),
             color = "black", size = 0.2)
 ```
 
 ```{r tests-assign_flight_plan}
 test_that("assign_flight_plan works", {
   
-  surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 5, end.x = 85, start.y = 5, end.y = 85,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 1, 
-                             buffer = TRUE, buffer.width = 0.2
+  surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+                             buffer = TRUE, buffer_width = 0.2
                              )
 
-  flight.id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
+  flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
                    1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
 
   expect_error(
     object = assign_flight_plan(
-    sf.segments = surv$buffered.segments,
-    flight.id = flight.id,
-    col.trans.id = "toto",
-    flight.day = "2022-02-08", 
-    survey.start.hour = "06:00:00",
-    flight.speed = 160,
-    intertransect.gap.duration = 60),
-    regexp = "col.trans.id must be a column of sf.segments"
+    sf_segments = surv$buffered_segments,
+    flight_id = flight_id,
+    col_trans_id = "toto",
+    flight_day = "2022-02-08", 
+    survey_start_hour = "06:00:00",
+    flight_speed = 160,
+    intertransect_gap_duration = 60),
+    regexp = "col_trans_id must be a column of sf_segments"
   )
   
   expect_error(
     object = assign_flight_plan(
-    sf.segments = surv$buffered.segments,
-    flight.id = flight.id,
-    col.trans.id = "transect",
-    flight.day = 2022, 
-    survey.start.hour = "06:00:00",
-    flight.speed = 160,
-    intertransect.gap.duration = 60),
-    regexp = "flight.day, survey.start.hour and col.trans.id must be character"
+    sf_segments = surv$buffered_segments,
+    flight_id = flight_id,
+    col_trans_id = "transect",
+    flight_day = 2022, 
+    survey_start_hour = "06:00:00",
+    flight_speed = 160,
+    intertransect_gap_duration = 60),
+    regexp = "flight_day, survey_start_hour and col_trans_id must be character"
   )
   
   expect_error(
     object = assign_flight_plan(
-    sf.segments = surv$segments,
-    flight.id = flight.id,
-    col.trans.id = "transect",
-    flight.day = "2022-02-08", 
-    survey.start.hour = "06:00:00",
-    flight.speed = 160,
-    intertransect.gap.duration = 60),
-    regexp = "sf.segments geometry is not of type POLYGON"
+    sf_segments = surv$segments,
+    flight_id = flight_id,
+    col_trans_id = "transect",
+    flight_day = "2022-02-08", 
+    survey_start_hour = "06:00:00",
+    flight_speed = 160,
+    intertransect_gap_duration = 60),
+    regexp = "sf_segments geometry is not of type POLYGON"
   )
 })
 
@@ -553,33 +573,35 @@ test_that("assign_flight_plan works", {
 
 # 3. Simulate survey on fixed individual
 
-This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by `simul_spat`. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected).  
+The \code{\link{detection_process}} function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by \code{\link{simul_spat}}. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected).  
 
 
 ```{r function-detection_process}
 #' Detection process on spatial point process
 #'
-#' This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by `simul_spat`. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected). 
+#' This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by \code{\link{simul_spat}}. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected). 
 #'
 #' @param pts sf object (points), the position of individuals to be surveyed
 #' @param transects sf object (lines), survey layout with transects or segments
-#' @param sigma numeric, effective strip half-width (in km, if in real space). If NULL (the default), strip-transect is implemented
-#' @param seg.id.col character, the name of the column in transects where the ids are stored
+#' @param strip_transect Boolean. Should strip-transect methodology be used? Default to TRUE
+#' @param sigma numeric, is strip_transect is TRUE, the width of the strip width; if strip-transect is FALSE, the effective strip half-width (in km, if in real space)
+#' @param seg_id_col character, the name of the column in transects where the ids are stored
+#' @param virtual_space Boolean. Is the survey done in a virtual space? Default to TRUE. 
 #'
 #' @importFrom sf st_distance st_drop_geometry
 #' @importFrom glue glue
 #' @importFrom stats rbinom dnorm
 #'
-#' @return the pts dataframe (sf object) with additional columns: distance, distance_km (if in real space), segID (the closest transect or segment from the individual) and detected (1 if the individual is detected, 0 otherwise)
+#' @return the pts dataframe (sf object) with additional columns: distance, distance_km (if in real space), seg_id (the closest transect or segment from the individual) and detected (1 if the individual is detected, 0 otherwise)
 #' @export
 #'
 #' @examples
 detection_process <- function(pts, 
                               transects, 
-                              strip.transect = TRUE,
+                              strip_transect = TRUE,
                               sigma = NULL, 
-                              seg.id.col = NULL, 
-                              virtual.space = TRUE) {
+                              seg_id_col = NULL, 
+                              virtual_space = TRUE) {
   if(isFALSE(all(inherits(pts, "sf"), inherits(transects, "sf")))){
     stop("pts and transects must be sf objects")
   }
@@ -595,32 +617,32 @@ detection_process <- function(pts,
   if(isFALSE(unique(sf::st_geometry_type(transects)) == "LINESTRING")){
     stop("transects geometry is not of type LINESTRING")
   }
-  if(isTRUE(is.null(seg.id.col))){
-    stop("seg.id.col must be provided")
+  if(isTRUE(is.null(seg_id_col))){
+    stop("seg_id_col must be provided")
   } else {
-    transects$segID <- sf::st_drop_geometry(transects[,seg.id.col]) %>% unlist()  
+    transects$seg_id <- sf::st_drop_geometry(transects[,seg_id_col]) |> unlist()  
   }
   if(isFALSE(is.numeric(sigma))){
     stop("sigma must be numeric")
   }
   
   ## compute distance with st_distance
-  if(isTRUE(virtual.space)){
+  if(isTRUE(virtual_space)){
     dist_mat <- sf::st_distance(
                   x = pts,
                   y = transects)
     pts$distance <- apply(dist_mat, 1, min)
-    pts$closest.seg <- apply(dist_mat, 1, function(x) min(which(x == min(x, na.rm = TRUE))))
-    pts$segID <- transects$segID[pts$closest.seg]  
+    pts$closest_seg <- apply(dist_mat, 1, function(x) min(which(x == min(x, na.rm = TRUE))))
+    pts$seg_id <- transects$seg_id[pts$closest_seg]  
     
     ## detection process
-    if(isTRUE(strip.transect)) {
+    if(isTRUE(strip_transect)) {
       message(glue::glue("Strip-transect is used with a width of {sigma}"))
       esw <- sigma
       pts$detected <- ifelse(pts$distance <= esw, 1, 0)
     } else {
       message(glue::glue("Line-transect is used with a effective half width of {sigma}"))
-      esw <- (pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
+      # esw <- (pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
       proba <- exp(- (pts$distance)^2 / (2 * sigma * sigma))
       pts$detected <- rbinom(nrow(pts), size = 1, prob = proba)
     }
@@ -632,10 +654,10 @@ detection_process <- function(pts,
     pts$distance <- apply(dist_mat, 1, min)
     pts$distance_km <- pts$distance / 1e3
     pts$closest.seg <- apply(dist_mat, 1, function(x) min(which(x == min(x, na.rm = TRUE))))
-    pts$segID <- transects$segID[pts$closest.seg]
+    pts$seg_id <- transects$seg_id[pts$closest.seg]
     
     ## detection process
-    if(isTRUE(strip.transect)) {
+    if(isTRUE(strip_transect)) {
       message(glue::glue("Strip-transect is used with a width of {sigma}"))
       esw <- sigma
       pts$detected <- ifelse(pts$distance_km <= esw, 1, 0)
@@ -654,22 +676,22 @@ detection_process <- function(pts,
 grid <- create_grid()
 env <- generate_env_layer(grid = grid)
 sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
-surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 2, 
-                             buffer = TRUE, buffer.width = 0.2
+surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
+                             buffer = TRUE, buffer_width = 0.2
                              )
 
 pts <- detection_process(pts = sp, 
                          transects = surv$segments, 
-                         strip.transect = TRUE, 
+                         strip_transect = TRUE, 
                          sigma = 0.2, 
-                         virtual.space = TRUE,
-                         seg.id.col = "seg.id")
+                         virtual_space = TRUE,
+                         seg_id_col = "seg_id")
 plot(sp$x, sp$y)
 # plot(sf::st_geometry(surv$buffered.segments), border = "pink", color = NA, add = T)
 plot(sf::st_geometry(surv$segments), col = "red", add = T)
-points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), axes = T, pch = 20, col = "blue")
+points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), pch = 20, col = "blue")
 ```
 
 ```{r tests-detection_process}
@@ -677,42 +699,277 @@ test_that("detection_process works", {
   grid <- create_grid()
   env <- generate_env_layer(grid = grid)
   sp <- suppressWarnings(simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F))
-  surv <- generate_survey_plan(bbx.xmin = 5, bbx.xmax = 85, bbx.ymin = 5, bbx.ymax = 85,
-                             start.x = 10, end.x = 80, start.y = 10, end.y = 80,
-                             space.out.factor = 4, segmentize = TRUE, seg.length = 2, 
-                             buffer = TRUE, buffer.width = 0.2
+  surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
+                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
+                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
+                             buffer = TRUE, buffer_width = 0.2
                              )
   
   expect_error(
     object = detection_process(pts = sp, 
                          transects = surv$segments, 
-                         strip.transect = TRUE, 
+                         strip_transect = TRUE, 
                          sigma = 0.2, 
-                         virtual.space = TRUE),
-    regexp = "seg.id.col must be provided")
+                         virtual_space = TRUE),
+    regexp = "seg_id_col must be provided")
   
   expect_error(
     object = detection_process(pts = "sp", 
                          transects = surv$segments, 
-                         strip.transect = TRUE, 
+                         strip_transect = TRUE, 
                          sigma = 0.2, 
-                         virtual.space = TRUE),
+                         virtual_space = TRUE),
     regexp = "pts and transects must be sf objects")
   
   expect_error(
     object = detection_process(pts = sp, 
                          transects = sp, 
-                         strip.transect = TRUE, 
+                         strip_transect = TRUE, 
                          sigma = 0.2, 
-                         virtual.space = TRUE),
+                         virtual_space = TRUE),
     regexp = "transects geometry is not of type LINESTRING")
 } )
 ```
 
 
-# 3. Simulate survey on moving individuals
+# 4. Simulate survey on moving individuals
+
+Once we have the movements of a population on one hand, and a survey design with time periods assigned on the other hand, we can match the two to simulate the conduction of an observation survey. This is what is done by the \code{\link{launch_survey_on_movement}} function, scrutinizing whether movement bouts temporally matching segments are included within them. If yes, and the centroid of the movement bout is included in the segment, the individual is considered as sighted by the survey. 
+This default strip-transect protocol can be changed to line-transect protocol, in which case a distance-dependent detection probability is additionally computed for each individual as to defined whether or not they are detected during the survey. 
+
+For the survey to be relevant, the size of the buffer around the segments must be carefully chosen in \code{\link{generate_survey_plan}} as to mimic the maximum distance to the track line considered possible during a survey (e.g. 200 m for a strip-transect survey; 1 km for a line-transect survey). 
+
+Note: there must not be a too large difference between the size of segments and that of movement bouts. Because the function simplifies the movement bouts to their centroids, movement bouts should be on the same time scale as the segments (seconds). Otherwise, the position approximated to define if the individual is sighted or not (i.e., the center of the movement bout) may not be representative of the movement of the individual. 
 
 
+```{r function-launch_survey_on_movement}
+#' Launch a survey on a population of moving individuals
+#'
+#' This function identifies the individuals detected during a standardised survey by spatial and temporal matching between segments and movement bouts of individuals. The default behaviour emulates a strip-transect survey, by considering individuals falling within a strip around the surveyed segments to be detected, but line-transect methodology can also be emulated by setting line-transect to TRUE. In this case, the actual detection of individuals is conditioned by their distance to the track line (probability of detection is computed using either half-normal of hazard rate detection functions). 
+#' 
+#'
+#' @param survey_data_buffered sf object, buffered segments as provided by \code{\link{generate_survey_plan}} and processed by \code{\link{assign_flight_plan}}. Matching sightings will be defined as individual movement bouts falling within the buffer around segments, so be careful about the buffer length. 
+#' @param survey_data_linear sf object, non-buffered segments (LINESTRING type) as provided by \code{\link{generate_survey_plan}}, used to compute distance to the trac line
+#' 
+#' @param traj_data data.frame of individual movements, as provided by \code{\link{simulate_trajectory_CPF}} and \code{\link{simulate_trajectory_FR}}
+#' @param track_id_col character, the column name storing the individual id in traj_data
+#' @param seg_id_col character, the column name storing the segment id in survey_data
+#' @param line_transect Boolean. Should the detection process follow line-transect methodology? Default to FALSE (strip-transect setting). If TRUE, sightings are spatially matched (falling inside segment buffers) then a detection probability is calculated based on the distance to the track line. 
+#' @param detection_function character, half-normal ("hn") or hasard rate ("hr") detection function, default to "hn"
+#' @param sigma numeric, if line_transect is TRUE, defines the effective strip half-width used in detection functions (km)
+#' @param b numeric, if detection_function = "hr", b value to be passed on to the detection_hr function
+#'
+#' @importFrom sf st_linestring st_sfc st_as_sf st_sf st_centroid st_distance st_crosses st_contains st_coordinates st_drop_geometry
+#' @importFrom lubridate as.duration interval intersect int_overlaps
+#' @importFrom dplyr pull left_join ungroup group_by mutate n summarize
+#' @importFrom purrr map
+#' @importFrom glue glue
+#' @importFrom stats rbinom
+#'
+#' @return A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column (N_ind_detected) summarising the number of individuals detected based on distance to the track line. 
+#' 
+#' @export
+#'
+#' @examples
+launch_survey_on_movement <- function(
+    survey_data_buffered,
+    survey_data_linear,
+    traj_data,
+    track_id_col = "ind_id",
+    seg_id_col = "seg_id",
+    line_transect = FALSE, sigma = 0.2, b = 1,
+    detection_function = "hn"){
+  # check 
+  if(isFALSE(all(inherits(survey_data_buffered, "sf"),inherits(survey_data_linear, "sf")))){
+    stop("survey_data_buffered and survey_data_linear must be a sf object")
+  }
+  if(isFALSE(is.data.frame(traj_data)) | isTRUE(inherits(traj_data, "sf"))){
+    stop("traj_data must be a data.frame")
+  }
+  if(isFALSE(all(is.character(track_id_col), is.character(seg_id_col)))){
+    stop("track_id_col and seg_id_col must be character")
+  }
+  
+  # function for use later
+  st_segment = function(r){sf::st_linestring(t(matrix(unlist(r), 2, 2)))}
+  
+  # rename columns to be used
+  traj_data$track_id <- traj_data |> dplyr::pull(track_id_col)
+  survey_data_buffered$seg_id <- survey_data_buffered |> dplyr::pull(seg_id_col)
+  survey_data_linear$seg_id <- survey_data_linear |> dplyr::pull(seg_id_col)
+  
+  # format columns
+  traj_data$ymd_hms <- as.POSIXct(traj_data$ymd_hms, tz = "UTC")
+  traj_data$date_from <- as.POSIXct(traj_data$date_from, tz = "UTC")
+  traj_data$interval <- lubridate::interval(traj_data$date_from, traj_data$ymd_hms)
+  
+  survey_data_buffered$start_time <- as.POSIXct(survey_data_buffered |> dplyr::pull("start_time"), tz = "UTC")
+  survey_data_buffered$end_time <- as.POSIXct(survey_data_buffered |> dplyr::pull("end_time"), tz = "UTC")
+  survey_data_buffered$interval <- lubridate::interval(survey_data_buffered$start_time, survey_data_buffered$end_time)
+  
+  # launch the detection process
+  detection_table <- lapply(1:nrow(survey_data_buffered), function(i){
+    message(glue::glue("Processing survey segment {i}"))
+    
+    # subset each segment
+    sub_seg <- survey_data_buffered[i,]
+    sub_seg$N_ind_tot <- NA
+    
+    # check which movement bouts overlap the sampling interval
+    interval_seg <- sub_seg$interval
+    sub_traj <- traj_data[lubridate::int_overlaps(traj_data$interval, interval_seg),]
+    
+    # if there is matching movement bouts, process detection
+    if(nrow(sub_traj) != 0){
+      # select only the longer overlap if several matching movement bouts for a single individual
+      sub_traj$overlap_duration <- lubridate::as.duration(lubridate::intersect(sub_traj$interval, interval_seg))
+      sub_traj <- sub_traj |> 
+        dplyr::group_by(track_id) |>
+        subset(overlap_duration == max(overlap_duration)) |>
+        dplyr::ungroup()
+  
+      # transform movement bouts to linestring
+      sub_traj$geometry = sf::st_sfc(sapply(1:nrow(sub_traj), 
+                            function(i){st_segment(sub_traj[i, c("Lon", "Lat", "x_from", "y_from")])}, simplify = FALSE))
+      sub_traj <- sf::st_sf(sub_traj)
+      # plot(sf::st_geometry(sub_traj), axes = T) 
+      
+      # look which movement bouts cross the segment or are included within the segment
+      cross_id <- unlist( sf::st_crosses(x = sub_seg, y = sub_traj, sparse = T) )
+      within_id <- unlist( sf::st_contains(x = sub_seg, y = sub_traj, sparse = T) )
+      det_id <- c(cross_id, within_id)
+      
+      # sum the number of movement bouts
+      if(length(det_id) != 0){
+        obs <- data.frame(track_id = sub_traj$track_id[det_id], 
+                          step_id = sub_traj$stepID[det_id], 
+                          seg_id = sub_seg$seg_id,
+                          dist_seg_edge = sub_traj[det_id,] |> suppressWarnings(sf::st_centroid()) |> sf::st_distance(sub_seg),
+                          start_time_seg = sub_seg$start_time,
+                          end_time_seg = sub_seg$end_time
+        )
+        obs <- obs |>
+          dplyr::mutate(centroid_x = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[det_id,] ))[,"X"])),
+                        centroid_y = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[det_id,] ))[,"Y"])) )
+        obs <- obs |> subset(dist_seg_edge == 0) # remove movement bouts whose centroid is not included in the seg (= too far from the transect line)
+        sub_seg$N_ind_tot <- nrow( obs[!duplicated(obs),] )
+      } else {
+        sub_seg$N_ind_tot <- 0
+        obs <- NULL
+      }
+    } else {
+      sub_seg$N_ind_tot <- 0
+      obs <- NULL
+    }
+    
+    return(list(survey = sub_seg, obs_table = obs))
+  })
+  
+  # extract effort table
+  survey <- detection_table |> purrr::map(`[[`, 1) |> do.call(what = "rbind")
+  survey <- survey |> 
+    dplyr::mutate(centre_x = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid(survey))[,"X"])),
+           centre_y = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid(survey))[,"Y"])))
+  
+  obs_table <- detection_table |> purrr::map(`[[`, 2) |> do.call(what = "rbind") |>
+    dplyr::mutate(Lon = centroid_x, Lat = centroid_y) |>
+    sf::st_as_sf(coords = c("centroid_x", "centroid_y"))  
+  
+  
+  if(line_transect == T){
+    message("Applying detection function")
+    # compute distance to the track line and line-transect setting
+    obs_table$dist_seg <- lapply(1:nrow(obs_table), function(i){
+      sub_seg <- survey_data_linear |> subset(seg_id == obs_table[i, ] |> dplyr::pull("seg_id"))
+      dist <- sf::st_distance(sub_seg, obs_table[i,])
+      return(dist)
+    }) |> unlist()
+   
+  
+    # define the detection probability based on distance to the track line
+    if(detection_function == "hn"){
+      obs_table$prob_dist <- detfunc_hn(x = obs_table$dist_seg, sigma = sigma)  
+    }
+    if(detection_function == "hr"){
+      obs_table$prob_dist <- detfunc_hr(x = obs_table$dist_seg, sigma = sigma, b = b)  
+    }
+    
+    # compute if detected
+    obs_table$detected <- rbinom(nrow(obs_table), 1, obs_table$prob_dist) 
+
+    # count the number of detection per seg
+    count_data <- obs_table |> sf::st_drop_geometry() |> subset(detected == 1) |> dplyr::group_by(seg_id) |> dplyr::summarise(N_ind_detected = dplyr::n())
+
+    # add to the survey dataframe
+    survey <- dplyr::left_join(survey, count_data, by = "seg_id")
+    survey$N_ind_detected[is.na(survey$N_ind_detected)] <- 0
+  }
+
+      
+  # export
+  return(list(effort_table = survey, obs_table = obs_table))
+}
+```
+
+```{r examples-launch_survey_on_movement}
+# an example with a small number of individuals
+survey <- launch_survey_on_movement(
+  survey_data_buffered = example_data$flight_plan,
+  survey_data_linear = example_data$survey$segments,
+  traj_data = example_data$mvmt_data,
+  line_transect = TRUE, detection_function = "hn",
+  sigma = 0.2
+)
+
+# look at the number of sightings
+summary(survey$effort_table$N_ind_tot)
+
+plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), xlab = "distance to the track line", ylab = "detection probability")
+
+# all sightings are in a few segments
+library(ggplot2)
+ggplot(survey$effort_table) +
+  geom_sf(data = survey$obs_table, aes(shape = as.factor(detected)), size = 2) +
+  geom_sf(aes(fill = N_ind_tot)) + viridis::scale_fill_viridis(limits = c(1,10), na.value = NA, alpha = 0.5)
+
+```
+
+```{r tests-launch_survey_on_movement}
+test_that("launch_survey_on_movement works", {
+  # test we get errors when survey data are not sf objects
+  expect_error(
+    object = launch_survey_on_movement(
+                survey_data_buffered = "example_data",
+                survey_data_linear = example_data$survey$segments[840:860,],
+                traj_data = example_data$mvmt_data,
+                line_transect = TRUE, detection_function = "hn",
+                sigma = 0.2
+              )
+    ,regexp = "survey_data_buffered and survey_data_linear must be a sf object"
+  )
+  expect_error(
+    object = launch_survey_on_movement(
+                survey_data_buffered = example_data$survey$buffered_segments[840:860,],
+                survey_data_linear = "example_data$survey$segments[840:860,]",
+                traj_data = example_data$mvmt_data,
+                line_transect = TRUE, detection_function = "hn",
+                sigma = 0.2
+              )
+    ,regexp = "survey_data_buffered and survey_data_linear must be a sf object"
+  )
+  # test we get an error when traj_data is an sf object
+  expect_error(
+    object = launch_survey_on_movement(
+                survey_data_buffered = example_data$survey$buffered_segments[840:860,],
+                survey_data_linear = example_data$survey$segments[840:860,],
+                traj_data = example_data$survey$segments[840:860,],
+                line_transect = TRUE, detection_function = "hn",
+                sigma = 0.2
+              )
+    ,regexp = "traj_data must be a data.frame"
+  )
+})
+```
 
 
 

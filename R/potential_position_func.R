@@ -6,11 +6,10 @@
 #' @param bearing Numeric vector, mu and kappa to be passed on randomdir
 #' @param step  Numeric, shape and rate to be passed on randomdist
 #' @param from data.frame including Lon and Lat fields and stepID of the point of origin
-#' @param colony.location data.frame vector with lon and lat position of the colony
+#' @param colony_location data.frame vector with lon and lat position of the colony
 #' @param resource.layer SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)
 #' 
-#' @importFrom terra extract
-#' @importFrom terra nlyr
+#' @importFrom terra extract nlyr
 #' @importFrom fields rdist
 #' 
 #' @return A data.frame with the n potential positions from the point of origin, informed with the value of the provided environmental layer corresponding to each as well as the distance from the colony. 
@@ -18,14 +17,14 @@
 #'
 #' @examples
 #' from <- data.frame(Lon = 1, Lat = 2, toto = 5)
-#' colony.location <- data.frame(Lon = 2, Lat = 5)
+#' colony_location <- data.frame(Lon = 2, Lat = 5)
 #' cdt <- generate_env_layer(grid = create_grid(), n = 1)$rasters
 #' potential_position_func(n = 10, from = from, 
-#'                         colony.location = colony.location, resource.layer = cdt, 
+#'                         colony_location = colony_location, resource_layer = cdt, 
 #'                         bearing = c(90,10), step = c(4.5, 3))
-potential_position_func <- function(n, bearing, step, from, colony.location, resource.layer){
-  if(isTRUE(inherits(resource.layer, "SpatRaster"))){
-    if(terra::nlyr(resource.layer) > 1){
+potential_position_func <- function(n, bearing, step, from, colony_location, resource_layer){
+  if(isTRUE(inherits(resource_layer, "SpatRaster"))){
+    if(terra::nlyr(resource_layer) > 1){
       stop("env_layer must include a single layer")
     }
   } else { stop("env_layer must be a SpatRaster") }
@@ -50,9 +49,9 @@ potential_position_func <- function(n, bearing, step, from, colony.location, res
   df$Lon <- from$Lon + (cos(df$angle) * df$step)
   df$Lat <- from$Lat + (sin(df$angle) * df$step)
   df$stepID <- from$stepID
-  df$env <- terra::extract(resource.layer, df[, c("Lon","Lat")])[[2]]
-  df$dist.col <- as.vector(fields::rdist(colony.location, df[, c("Lon", "Lat")]))
-  df$potential.position.id <- 1:n
+  df$env <- terra::extract(resource_layer, df[, c("Lon","Lat")])[[2]]
+  df$dist_col <- as.vector(fields::rdist(colony_location, df[, c("Lon", "Lat")]))
+  df$potential_position_id <- 1:n
   return(df)
 }
 
