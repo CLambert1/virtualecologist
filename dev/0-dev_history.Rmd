@@ -41,7 +41,23 @@ fusen::init_share_on_github()
 # Start using git
 
 ```{r, eval=FALSE}
+## definit le compte
+usethis::use_git_config(scope = "user",
+                        user.name = "CLambert1",
+                        user.email = "charlotte.anne.lambert@gmail.com",
+                        credential.helper = "store",
+                        init.defaultBranch = "main")
+# donne les identifiants
+gitcreds::gitcreds_set(url = "https://github.com/")
+
+# lance l'utilisation de git en local
 usethis::use_git()
+
+# associe au repo en remote
+# usethis::use_git_remote(url = "https://github.com/CLambert1/simtools.git") # ne fonctionne pas car l'autentification via rstudio n'est plus autorisé par github
+# doit faire dans le terminal : git clone https://github.com/CLambert1/simtools.git ; puis autentification dans le pop-up
+# ensuite git push -u origin main dans le terminal pour faire le premier push et activer la syncro
+  
 # Deal with classical files to ignore
 usethis::git_vaccinate()
 # Use main for primary branch
@@ -67,8 +83,8 @@ usethis::use_news_md()
 
 ```{r, eval=FALSE}
 # add data-raw/ dans le dossier du package - use once
-# usethis::use_data_raw() # creer le dossier et DATASET.R ; ensuite créer des scripts R pour les transformer
-# simulation tools so no need for input data
+usethis::use_data_raw() # creer le dossier et DATASET.R ; ensuite créer des scripts R pour les transformer
+
 ```
 
 
@@ -82,16 +98,12 @@ usethis::use_pipe()
 # package-level documentation
 usethis::use_package_doc()
 
-# update dependencies
-usethis::use_import_from("stats", "predict")
-usethis::use_import_from("gstat", "gstat")
-usethis::use_import_from("gstat", "vgm")
-usethis::use_import_from("terra", "predict")
-usethis::use_import_from("sp", "coordinates")
-usethis::use_import_from("dplyr", "select")
-usethis::use_import_from("purrr", "reduce")
-# unecessary if use
+# update dependancies etc
 attachment::att_amend_desc()
+
+# create a vignette for the whole package
+usethis::use_vignette("simtools")
+
 
 # GitHub
 # Add your credentials for GitHub
@@ -105,7 +117,7 @@ usethis::use_github()
 # Set Continuous Integration
 # _GitHub (included in `init_share_on_github()`)
 usethis::use_github_action_check_standard()
-usethis::use_github_action("pkgdown")
+usethis::use_github_action("pkgdown") # déployement en ligne du site sur une Github page via GutHub Action (publie dans une branche 'gh_pages')
 usethis::use_github_action("test-coverage")
 # _GitLab
 gitlabr::use_gitlab_ci(type = "check-coverage-pkgdown")
@@ -147,7 +159,7 @@ covr::report()
 usethis::use_pkgdown()
 
 # reconstruit le site en entier
-pkgdown::build_site(override = list(destination = "inst/site")) # faire dans inst/ plutot que à la racine
+pkgdown::build_site(override = list(destination = "inst/site")) # faire dans inst/ plutot que à la racine, pour que le site soit installé en local avec le package et donc accessible sans internet
 # custom appearence in _pkgdown.yml (racine du package)
 # choose bootswatch name from : https://bootswatch.com/
 # see https://pkgdown.r-lib.org/articles/customise.html for customisation options
@@ -169,5 +181,13 @@ devtools::build(vignettes = TRUE)
 # usethis::create_github_token()
 # gitcreds::gitcreds_set()
 fusen::init_share_on_github()
+```
+
+# check l'installation du package
+
+```{r}
+devtools::build(vignettes = TRUE) # construit le package au format tar.gz
+remotes::install_local(path = "~/simtools_0.0.0.9000.tar.gz") # installe le package depuis le format tar.gz
+simtools::launch_help()
 ```
 

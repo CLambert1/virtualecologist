@@ -5,42 +5,42 @@
 \title{Simulate individual trajectory}
 \usage{
 simulate_trajectory_FR(
-  initial.position,
-  resource.layer,
-  starting.hour,
-  starting.bearing = c(90, 10),
-  starting.step = c(4.5, 3),
-  travel.bearing = c(0, 20),
-  travel.step = c(3, 3),
-  foraging.bearing = c(0, 0.5),
-  foraging.step = c(1, 3),
+  initial_position,
+  resource_layer,
+  starting_hour,
+  starting_bearing = c(90, 10),
+  starting_step = c(4.5, 3),
+  travel_bearing = c(0, 20),
+  travel_step = c(3, 3),
+  foraging_bearing = c(0, 0.5),
+  foraging_step = c(1, 3),
   minx = 0,
   maxx = 90,
   miny = 0,
   maxy = 90,
-  step.duration = 1,
-  activity.threshold = 0.5,
-  max.duration = 720
+  step_duration = 1,
+  activity_threshold = 0.5,
+  max_duration = 720
 )
 }
 \arguments{
-\item{initial.position}{data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields)}
+\item{initial_position}{data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields)}
 
-\item{resource.layer}{SpatRaster of the resource layer}
+\item{resource_layer}{SpatRaster of the resource layer}
 
-\item{starting.hour}{Starting hour}
+\item{starting_hour}{Starting hour}
 
-\item{starting.bearing}{Bearing when departing the colony (mu, kappa)}
+\item{starting_bearing}{Bearing when departing the colony (mu, kappa)}
 
-\item{starting.step}{Step length when departing the colony (mu, kappa)}
+\item{starting_step}{Step length when departing the colony (mu, kappa)}
 
-\item{travel.bearing}{Bearing from previous step when traveling (mu, kappa)}
+\item{travel_bearing}{Bearing from previous step when traveling (mu, kappa)}
 
-\item{travel.step}{Distance from previous step when traveling (scale, rate)}
+\item{travel_step}{Distance from previous step when traveling (scale, rate)}
 
-\item{foraging.bearing}{Bearing from previous step when foraging/searching (mu, kappa)}
+\item{foraging_bearing}{Bearing from previous step when foraging/searching (mu, kappa)}
 
-\item{foraging.step}{Distance from previous step when foraging (scale, rate)}
+\item{foraging_step}{Distance from previous step when foraging (scale, rate)}
 
 \item{minx}{Minimum longitude of the bounding box to simulate trajectory within}
 
@@ -50,59 +50,62 @@ simulate_trajectory_FR(
 
 \item{maxy}{Maximum latitude of the bounding box to simulate trajectory within}
 
-\item{step.duration}{Duration of a step length, in minutes (defaults 1), defines the sampling interval}
+\item{step_duration}{Duration of a step length, in minutes (defaults 1), defines the sampling interval}
 
-\item{activity.threshold}{Threshold environmental value defining when an individual switches from travelling to foraging movement}
+\item{activity_threshold}{Threshold environmental value defining when an individual switches from travelling to foraging movement}
 
-\item{max.duration}{Total duration of a full trip, in minutes (defaults to 720, 12h)}
+\item{max_duration}{Total duration of a full trip, in minutes (defaults to 720, 12h)}
 }
 \value{
 a data.frame
 }
 \description{
-Simulate individual trajectory
+Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around its colony and does not perform homing bout.
 }
 \examples{
 library(ggplot2)
 library(viridis)
 library(tidyterra)
 library(lubridate)
-colony.location <- data.frame(Lon = 50, Lat = 50)
+colony_location <- data.frame(Lon = 50, Lat = 50)
 cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 4)
-terra::plot(cdt$rasters)
-# determine the sunrise hour for a random dat
-daylength <- insol::daylength(long = colony.location$Lon, 
-                              lat = colony.location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "\%H:\%M", tz = "UTC"))
     
-single.traj <- simulate_trajectory_FR(initial.position = colony.location, 
-                    resource.layer = cdt$rasters, 
-                    starting.hour = ymd_hms(sunrise), # departs at sunrise
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+single_traj <- simulate_trajectory_FR(initial_position = colony_location, 
+                    resource_layer = cdt$rasters, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    step.duration = 1,
-                    activity.threshold = 0.7,
-                    max.duration = 2000)
+                    step_duration = 1,
+                    activity_threshold = 0.7,
+                    max_duration = 2000)
 
 # view the trajectory
-ggplot(single.traj) +
+ggplot(single_traj) +
   geom_spatraster(data = cdt$rasters) + 
   geom_point(aes(x = Lon, y = Lat, color = activity)) +
-  geom_point(data = colony.location, aes(x = Lon, y = Lat), col = "red") +
+  geom_point(data = colony_location, aes(x = Lon, y = Lat), col = "red") +
   scale_fill_viridis(option = "H") 
 
 # look at the density distribution of distance to colony and movement parameters
-ggplot(single.traj) + geom_density(aes(x = dist.col))
-ggplot(single.traj |> subset(activity \%in\% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-ggplot(single.traj |> subset(activity \%in\% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+ggplot(single_traj) + geom_density(aes(x = dist_col))
+ggplot(single_traj |> subset(activity \%in\% c("forage", "travel"))) + 
+  geom_density(aes(x = angle)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity \%in\% c("forage", "travel"))) + 
+  geom_density(aes(x = step)) + facet_wrap("activity")
 
 
 }
+\seealso{
+Other individual movement functions: 
+\code{\link{potential_position_func}()},
+\code{\link{randomdir}()},
+\code{\link{randomdist}()},
+\code{\link{simulate_trajectory_CPF}()}
+}
+\concept{individual movement functions}

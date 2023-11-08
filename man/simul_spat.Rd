@@ -54,3 +54,6 @@ ggplot2::ggplot(out) +
    ggplot2::geom_sf(ggplot2::aes(size = size)) + ggplot2::facet_wrap("name") 
 
 }
+\seealso{
+\code{\link{generate_resource_layer()}} \code{\link{generate_env_layers()}}
+}

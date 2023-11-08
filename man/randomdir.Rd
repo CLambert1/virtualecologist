@@ -11,6 +11,17 @@ randomdir(n, mu, kappa)
 
 \item{mu}{mean direction of the distribution as a \code{circular} object.}
 }
+\value{
+n random angles
+}
 \description{
 Return random direction angles
 }
+\seealso{
+Other individual movement functions: 
+\code{\link{potential_position_func}()},
+\code{\link{randomdist}()},
+\code{\link{simulate_trajectory_CPF}()},
+\code{\link{simulate_trajectory_FR}()}
+}
+\concept{individual movement functions}

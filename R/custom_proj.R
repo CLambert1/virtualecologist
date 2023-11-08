@@ -32,8 +32,7 @@ custom_proj <- function(lon_0 = 0, lat_0 = 0, x_0 = 0, y_0 = 0){
 #' 
 #' Description
 #' @import spatstat
-#' @importFrom stats rpois
-#' @importFrom stats runif
+#' @importFrom stats rpois runif
 #' 
 #' 
 #' @noRd

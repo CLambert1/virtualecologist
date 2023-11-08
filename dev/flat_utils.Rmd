@@ -1,0 +1,109 @@
+---
+title: "flat_utils.Rmd empty"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r development, include=FALSE}
+library(testthat)
+```
+
+```{r development-load}
+# Load already included functions if relevant
+pkgload::load_all(export_all = FALSE)
+```
+
+# Access package documentation
+
+The website can be launched locally with `launch_help()`.
+
+```{r function-launch_help}
+#' Launch help for the package
+#'
+#' @importFrom utils browseURL
+#' @return the website
+#' @export
+#'
+#' @examples
+launch_help <- function(){
+  system.file("site", "index.html", package = "simtools") |>
+    utils::browseURL()
+}
+```
+
+```{r examples-launch_help}
+launch_help()
+```
+
+```{r tests-launch_help}
+test_that("utils works", {
+ expect_true(inherits(launch_help, "function")) 
+})
+```
+
+# Not in
+
+`%!in%` as a negation of `%in%`.
+    
+```{r function-not_in}
+#' Not in
+#'
+#' @param x,y Numeric vectors
+#' 
+#' @return Boolean
+#' @export
+#'
+'%!in%' <- function(x,y){!('%in%'(x,y))}
+```
+  
+```{r example-not_in}
+1 %!in% c(2:3)
+
+2 %!in% c(2:3)
+```
+  
+```{r tests-not_in}
+test_that("%!in% works", {
+  expect_true( 1 %!in% c(2:3) )
+})
+```
+
+
+# Normalize a vector 
+
+`normalize` a vector of values. 
+
+```{r function-normalize}
+#' Normalize a vector
+#'
+#' @param cov a vector
+#' 
+#' @return a vector
+#' @export
+normalize <- function(cov){ (cov-min(cov))/(max(cov)-min(cov)) }
+# normalize <- function(cov){ cov/max(cov) }
+```
+  
+```{r example-normalize}
+normalize(c(1:5))
+```
+  
+```{r tests-normalize}
+test_that("normalize works", {
+  expect_true( max( normalize(c(1:5)) ) == 1 )
+})
+```
+
+
+
+
+```{r development-inflate, eval=FALSE}
+# Run but keep eval=FALSE to avoid infinite loop
+# Execute in the console directly
+fusen::inflate(flat_file = "dev/flat_utils.Rmd", 
+               vignette_name = NA, 
+               overwrite = TRUE, 
+               check = FALSE)
+```
+

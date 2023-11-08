@@ -21,10 +21,10 @@ pkgload::load_all(export_all = FALSE)
 #'
 #' @importFrom circular rwrappednormal 
 #'
-#' @return
+#' @return n random angles
 #' @export
+#' @family individual movement functions
 #'
-#' @examples
 randomdir <- function(n,mu,kappa){
   out <- circular::rwrappednormal(10, mu = circular::circular(mu, units = "degrees", 
                                                               template = "geographic"),
@@ -38,10 +38,10 @@ randomdir <- function(n,mu,kappa){
 #'
 #' @importFrom stats rgamma 
 #'
-#' @return
+#' @return n random step lengths
 #' @export
+#' @family individual movement functions
 #'
-#' @examples
 randomdist <- function(n, shape, rate){
   out <- stats::rgamma(n, shape, rate)
   return(out)
@@ -50,29 +50,32 @@ randomdist <- function(n, shape, rate){
 
 # Define potential next positions
 
-Generating a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each positions, the value of env_rast is retrieved as well as the distance from the colony location. 
+\code{\link{potential_position_func}} generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
 
 ```{r function-potential_position_func}
 #' Identify potential next positions
+#'
+#' The function generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
 #'
 #' @param n Numeric, the number of potential positions to generate
 #' @param bearing Numeric vector, mu and kappa to be passed on randomdir
 #' @param step  Numeric, shape and rate to be passed on randomdist
 #' @param from data.frame including Lon and Lat fields and stepID of the point of origin
-#' @param colony.location data.frame vector with lon and lat position of the colony
+#' @param colony_location data.frame vector with lon and lat position of the colony
 #' @param resource.layer SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)
 #' 
-#' @importFrom terra extract
-#' @importFrom terra nlyr
+#' @importFrom terra extract nlyr
 #' @importFrom fields rdist
 #' 
 #' @return A data.frame with the n potential positions from the point of origin, informed with the value of the provided environmental layer corresponding to each as well as the distance from the colony. 
 #' @export
 #'
+#' @family individual movement functions
+#'
 #' @examples
-potential_position_func <- function(n, bearing, step, from, colony.location, resource.layer){
-  if(isTRUE(inherits(resource.layer, "SpatRaster"))){
-    if(terra::nlyr(resource.layer) > 1){
+potential_position_func <- function(n, bearing, step, from, colony_location, resource_layer){
+  if(isTRUE(inherits(resource_layer, "SpatRaster"))){
+    if(terra::nlyr(resource_layer) > 1){
       stop("env_layer must include a single layer")
     }
   } else { stop("env_layer must be a SpatRaster") }
@@ -97,9 +100,9 @@ potential_position_func <- function(n, bearing, step, from, colony.location, res
   df$Lon <- from$Lon + (cos(df$angle) * df$step)
   df$Lat <- from$Lat + (sin(df$angle) * df$step)
   df$stepID <- from$stepID
-  df$env <- terra::extract(resource.layer, df[, c("Lon","Lat")])[[2]]
-  df$dist.col <- as.vector(fields::rdist(colony.location, df[, c("Lon", "Lat")]))
-  df$potential.position.id <- 1:n
+  df$env <- terra::extract(resource_layer, df[, c("Lon","Lat")])[[2]]
+  df$dist_col <- as.vector(fields::rdist(colony_location, df[, c("Lon", "Lat")]))
+  df$potential_position_id <- 1:n
   return(df)
 }
 
@@ -107,10 +110,10 @@ potential_position_func <- function(n, bearing, step, from, colony.location, res
 
 ```{r example-potential_position_func}
 from <- data.frame(Lon = 1, Lat = 2, toto = 5)
-colony.location <- data.frame(Lon = 2, Lat = 5)
+colony_location <- data.frame(Lon = 2, Lat = 5)
 cdt <- generate_env_layer(grid = create_grid(), n = 1)$rasters
 potential_position_func(n = 10, from = from, 
-                        colony.location = colony.location, resource.layer = cdt, 
+                        colony_location = colony_location, resource_layer = cdt, 
                         bearing = c(90,10), step = c(4.5, 3))
 ```
   
@@ -119,23 +122,23 @@ test_that("potential_position_func works", {
   expect_true(inherits(potential_position_func, "function")) 
   
   from <- data.frame(Lon = 1, Lat = 2, toto = 5)
-  colony.location <- data.frame(Lon = 2, Lat = 5)
+  colony_location <- data.frame(Lon = 2, Lat = 5)
   cdt <- generate_env_layer(grid = create_grid(), n = 1)$rasters
 
   # check returns an error if env_rast is not a raster
   expect_error(
     object = potential_position_func(from = from, 
-                                     colony.location = colony.location, resource.layer = from)
+                                     colony_location = colony_location, resource_layer = from)
   )
   # check returns an error if from does not include coord_col names
   expect_error(
     object = potential_position_func(from = from[,c("Lon","toto")], 
-                                     colony.location = colony.location, resource.layer = cdt)
+                                     colony_location = colony_location, resource_layer = cdt)
   )
   # check returns an error when bearing is not of length 2
   expect_error(
     object = potential_position_func(from = from, coord_col = coord_col,
-                                     colony.location = colony.location, resource.layer = cdt,
+                                     colony_location = colony_location, resource_layer = cdt,
                                      bearing = 1, step = c(2,3))
   )
 })
@@ -144,300 +147,305 @@ test_that("potential_position_func works", {
 
 # Simulate the trajectory of a single central-place forager
 
-Simulate a full foraging trajectory of an individual departing from its colony. The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max.dist) or when an hour before sunset. The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). 
+\code{\link{simulate_trajectory_CPF}} simulates a full foraging trajectory of an individual departing from its colony. The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max_dist) or after a given time period (max_duration). The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). 
 The user can define the step duration, that is the time interval at which the positions are sampled.  
 
-For each position, ten potential subsequent positions are randomly sampled using `potential_position_func()`, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource.layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package. 
+For each position, ten potential subsequent positions are randomly sampled using \code{\link{potential_position_func()}}, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package. 
 
-The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, subsequent positions are randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity.threshold), the individual switches to foraging movements; if not, the individual continues travelling.
+The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, subsequent positions are randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity_threshold), the individual switches to foraging movements; if not, the individual continues travelling.
 
-When individuals reaches the threshold distance to colony (max.dist), or the trip duration exceeds the given duration (max.duration), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
+When individuals reaches the threshold distance to colony (max_dist), or the trip duration exceeds the given duration (max_duration), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
 
 ```{r function-simulate_trajectory_CPF}
 #' Simulate individual trajectory
 #'
-#' @param initial.position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields), considered to be the colony location
-#' @param resource.layer SpatRaster of the resource layer
-#' @param starting.hour Starting hour
-#' @param starting.bearing Bearing when departing the colony (mu, kappa)
-#' @param starting.step Step length when departing the colony (mu, kappa)
-#' @param travel.bearing Bearing from previous step when traveling (mu, kappa)
-#' @param travel.step Distance from previous step when traveling (scale, rate) 
-#' @param foraging.bearing Bearing from previous step when foraging/searching (mu, kappa)
-#' @param foraging.step Distance from previous step when foraging (scale, rate)
+#' Simulate the trajectory of a central-place forager over a given time period. 
+#' 
+#' @details The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max_dist) or after a given time period (max_duration). The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). The user can define the step duration, that is the time  interval at which the positions are sampled. 
+#'    For each position, ten potential subsequent positions are randomly sampled using \code{\link{potential_position_func()}}, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package. 
+#'    The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, subsequent positions are randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity_threshold), the individual switches to foraging movements; if not, the individual continues travelling.
+#'    When individuals reaches the threshold distance to colony (max_dist), or the trip duration exceeds the given duration (max_duration), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
+#'
+#' @param initial_position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields), considered to be the colony location
+#' @param resource_layer SpatRaster of the resource layer
+#' @param starting_hour Starting hour
+#' @param starting_bearing Bearing when departing the colony (mu, kappa)
+#' @param starting_step Step length when departing the colony (mu, kappa)
+#' @param travel_bearing Bearing from previous step when traveling (mu, kappa)
+#' @param travel_step Distance from previous step when traveling (scale, rate) 
+#' @param foraging_bearing Bearing from previous step when foraging/searching (mu, kappa)
+#' @param foraging_step Distance from previous step when foraging (scale, rate)
 #' @param minx Minimum longitude of the bounding box to simulate trajectory within
 #' @param maxx Maximum longitude of the bounding box to simulate trajectory within
 #' @param miny Minimum latitude of the bounding box to simulate trajectory within
 #' @param maxy Maximum latitude of the bounding box to simulate trajectory within
-#' @param max.dist Distance threshold value above which the individual starts its homing bout
-#' @param max.duration Total duration of a full trip, in minutes (defaults to 720, 12h)
-#' @param step.duration Duration of a step length, in minutes (defaults 1), defines the sampling interval
-#' @param activity.threshold Threshold environmental value defining when an individual switches from travelling to foraging movement
+#' @param max_dist Distance threshold value above which the individual starts its homing bout
+#' @param max_duration Total duration of a full trip, in minutes (defaults to 720, 12h)
+#' @param step_duration Duration of a step length, in minutes (defaults 1), defines the sampling interval
+#' @param activity_threshold Threshold environmental value defining when an individual switches from travelling to foraging movement
 #' 
 #'
 #' @import lubridate
-#' @importFrom dplyr full_join
-#' @importFrom dplyr slice_sample
-#' @importFrom dplyr slice_head
-#' @importFrom dplyr desc
-#' @importFrom dplyr arrange
+#' @importFrom dplyr full_join slice_sample slice_head desc arrange
 #' 
 #' @return a data.frame
 #' @export
+#' 
+#' @family individual movement functions
 #'
 #' @examples
-simulate_trajectory_CPF <- function(initial.position, 
-                                resource.layer, 
-                       starting.hour,
-                       starting.bearing = c(90,10),
-                       starting.step = c(4.5, 3),
-                       travel.bearing = c(0, 20), # (mu, kappa) -> higher kappa = higher concentration
-                       travel.step = c(3, 3), #  (scale, rate) -> smaller the rate, higher the dispersion
-                       foraging.bearing = c(0, 0.5), 
-                       foraging.step = c(1, 3), 
+simulate_trajectory_CPF <- function(initial_position, 
+                                resource_layer, 
+                       starting_hour,
+                       starting_bearing = c(90,10),
+                       starting_step = c(4.5, 3),
+                       travel_bearing = c(0, 20), # (mu, kappa) -> higher kappa = higher concentration
+                       travel_step = c(3, 3), #  (scale, rate) -> smaller the rate, higher the dispersion
+                       foraging_bearing = c(0, 0.5), 
+                       foraging_step = c(1, 3), 
                        minx = 0, maxx = 90, 
                        miny = 0, maxy = 90,
-                       max.dist = 40,
-                       step.duration = 1,
-                       activity.threshold = 0.5,
-                       max.duration = 720) 
+                       max_dist = 40,
+                       step_duration = 1,
+                       activity_threshold = 0.5,
+                       max_duration = 720) 
 {
-  if(isFALSE(initial.position$Lon >= minx & initial.position$Lon <= maxx &
-         initial.position$Lat >= miny & initial.position$Lat <= maxy)){
-    stop("initial.position must be included in the bounding box given by minx, maxx, miny and maxy")
+  if(isFALSE(initial_position$Lon >= minx & initial_position$Lon <= maxx &
+         initial_position$Lat >= miny & initial_position$Lat <= maxy)){
+    stop("initial_position must be included in the bounding box given by minx, maxx, miny and maxy")
   }
-  ext.coord <- as.vector(terra::ext(resource.layer))
-  if(isFALSE(initial.position$Lon >= ext.coord[[1]] & initial.position$Lon <= ext.coord[[2]] &
-            initial.position$Lat >= ext.coord[[3]] & initial.position$Lat <= ext.coord[[4]])){
-    stop("initial.position must be included in the resource.layer extent")
+  ext_coord <- as.vector(terra::ext(resource_layer))
+  if(isFALSE(initial_position$Lon >= ext_coord[[1]] & initial_position$Lon <= ext_coord[[2]] &
+            initial_position$Lat >= ext_coord[[3]] & initial_position$Lat <= ext_coord[[4]])){
+    stop("initial_position must be included in the resource_layer extent")
   }
-  if(nrow(initial.position) != 1){
-    stop("initial.position must include a single row")
+  if(nrow(initial_position) != 1){
+    stop("initial_position must include a single row")
   }
-  # check sur structure de initial.position sont fait dans potential_position_func()
+  # check sur structure de initial_position sont fait dans potential_position_func()
   
-  track_output <- data.frame(Lon = initial.position$Lon,
-                             Lat = initial.position$Lat,
+  track_output <- data.frame(Lon = initial_position$Lon,
+                             Lat = initial_position$Lat,
                              angle = NA,
                              step = 0,
                              env = NA,
-                             dist.col = 0,
+                             dist_col = 0,
                              activity = "start",
                              stepID = 0,
-                             ymd.hms = starting.hour,
-                             x.from = initial.position$Lon,
-                             y.from = initial.position$Lat,
-                             date.from = starting.hour)
+                             ymd_hms = starting_hour,
+                             x_from = initial_position$Lon,
+                             y_from = initial_position$Lat,
+                             date_from = starting_hour)
   
   ### Departs from the colony - outbound phase of travel and foraging bouts
   i <- 2
   while(
-      track_output[i-1, "dist.col"] < max.dist &
-      track_output[i-1, "ymd.hms"] < ymd_hms(starting.hour) + lubridate::minutes(max.duration)
+      track_output[i-1, "dist_col"] < max_dist &
+      track_output[i-1, "ymd_hms"] < ymd_hms(starting_hour) + lubridate::minutes(max_duration)
   ){
     # starts with the initial bearing
     if(i == 2){ 
-      potential.position <- potential_position_func(n = 10, 
-                                                    bearing = starting.bearing, 
-                                                    step = starting.step, 
+      potential_position <- potential_position_func(n = 10, 
+                                                    bearing = starting_bearing, 
+                                                    step = starting_step, 
                                                     from = track_output[i - 1, ],
-                                                    colony.location = initial.position, 
-                                                    resource.layer = resource.layer) |>
+                                                    colony_location = initial_position, 
+                                                    resource_layer = resource_layer) |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
         dplyr::slice_sample(n = 1)
-      if(is.null(nrow(potential.position))) { # if no points possible then do it again
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = starting.bearing, 
-                                                      step = starting.step, 
+      if(is.null(nrow(potential_position))) { # if no points possible then do it again
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = starting_bearing, 
+                                                      step = starting_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny) |>
           dplyr::slice_sample(n = 1)
         } 
-      track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+      track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-      track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-      track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-      track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-      track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+      track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+      track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+      track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+      track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
       track_output[i, "activity"] <- "travel"
     }
     # continue with traveling parameters but not yet condition on environment
     if(i %in% c(3:5)){
-      potential.position <- potential_position_func(n = 10, 
-                                                    bearing = travel.bearing, 
-                                                    step = travel.step, 
+      potential_position <- potential_position_func(n = 10, 
+                                                    bearing = travel_bearing, 
+                                                    step = travel_step, 
                                                     from = track_output[i - 1, ],
-                                                    colony.location = initial.position, 
-                                                    resource.layer = resource.layer) |>
+                                                    colony_location = initial_position, 
+                                                    resource_layer = resource_layer) |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
         dplyr::slice_sample(n = 1) 
-      if(is.null(nrow(potential.position))) { # if no points possible then do it again
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = travel.bearing, 
-                                                      step = travel.step, 
+      if(is.null(nrow(potential_position))) { # if no points possible then do it again
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = travel_bearing, 
+                                                      step = travel_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny) |>
           dplyr::slice_sample(n = 1) 
       } 
-      track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+      track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-      track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-      track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-      track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-      track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+      track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+      track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+      track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+      track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
       track_output[i, "activity"] <- "travel"
     }else{
     ### Starts foraging bouts
       # sample potential positions based on movement type of previous step and select next step based on environment
       if(track_output[i-1, "activity"] == "travel"){
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = travel.bearing, 
-                                                      step = travel.step, 
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = travel_bearing, 
+                                                      step = travel_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           dplyr::arrange(dplyr::desc(env)) |> # ordre d?croissant selon env
           dplyr::slice_head(n = 4) |> # prend les 4 premiers points
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny) 
-          if(!is.null(nrow(potential.position))) {  # random select among the remaining points, if the table is not empty
-            potential.position <- potential.position |> dplyr::slice_sample(n = 1) }
-        if(is.null(nrow(potential.position))) { 
-          potential.position <- potential_position_func(n = 10, 
-                                                        bearing = travel.bearing, 
-                                                        step = travel.step, 
+          if(!is.null(nrow(potential_position))) {  # random select among the remaining points, if the table is not empty
+            potential_position <- potential_position |> dplyr::slice_sample(n = 1) }
+        if(is.null(nrow(potential_position))) { 
+          potential_position <- potential_position_func(n = 10, 
+                                                        bearing = travel_bearing, 
+                                                        step = travel_step, 
                                                         from = track_output[i - 1, ],
-                                                        colony.location = initial.position, 
-                                                        resource.layer = resource.layer) |>
+                                                        colony_location = initial_position, 
+                                                        resource_layer = resource_layer) |>
             dplyr::arrange(dplyr::desc(env)) |>
             dplyr::slice_head(n = 4) |>
             subset(Lon < maxx & Lon > minx) |>
             subset(Lat < maxy & Lat > miny)
-            if(!is.null(nrow(potential.position))) {  
-              potential.position <- potential.position |> dplyr::slice_sample(n = 1) }
+            if(!is.null(nrow(potential_position))) {  
+              potential_position <- potential_position |> dplyr::slice_sample(n = 1) }
         }
       }
       if(track_output[i-1, "activity"] == "forage"){
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = foraging.bearing, 
-                                                      step = foraging.step, 
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = foraging_bearing, 
+                                                      step = foraging_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           dplyr::arrange(dplyr::desc(env)) |> # ordre d?croissant selon env
           dplyr::slice_head(n = 4) |> # prend les 4 premiers points
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny)
-          if(!is.null(nrow(potential.position))) {  
-            potential.position <- potential.position |> dplyr::slice_sample(n = 1) } #  subset(step == min(step))
-        if(is.null(nrow(potential.position))) {  # if no points possible then do it again
-          potential.position <- potential_position_func(n = 10, 
-                                                        bearing = foraging.bearing, 
-                                                        step = foraging.step, 
+          if(!is.null(nrow(potential_position))) {  
+            potential_position <- potential_position |> dplyr::slice_sample(n = 1) } #  subset(step == min(step))
+        if(is.null(nrow(potential_position))) {  # if no points possible then do it again
+          potential_position <- potential_position_func(n = 10, 
+                                                        bearing = foraging_bearing, 
+                                                        step = foraging_step, 
                                                         from = track_output[i - 1, ],
-                                                        colony.location = initial.position, 
-                                                        resource.layer = resource.layer) |>
+                                                        colony_location = initial_position, 
+                                                        resource_layer = resource_layer) |>
             dplyr::arrange(dplyr::desc(env)) |>
             dplyr::slice_head(n = 4) |>
             subset(Lon < maxx & Lon > minx) |>
             subset(Lat < maxy & Lat > miny)
-          if(!is.null(nrow(potential.position))) {  
-            potential.position <- potential.position |> dplyr::slice_sample(n = 1) }
+          if(!is.null(nrow(potential_position))) {  
+            potential_position <- potential_position |> dplyr::slice_sample(n = 1) }
         }
       }
-      track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+      track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-      track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-      track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-      track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-      track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+      track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+      track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+      track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+      track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
       # evaluate whether traveling or foraging (if env >= 0.5 = switch) for next step
-      track_output[i, "activity"] <- ifelse( potential.position$env >= activity.threshold, "forage", "travel") 
+      track_output[i, "activity"] <- ifelse( potential_position$env >= activity_threshold, "forage", "travel") 
     }
     i = i +1  
     }
   ### Starts homing phase
   i <- nrow(track_output) +1 
-  while(track_output[i-1, "dist.col"] >= 0.5 ) {
+  while(track_output[i-1, "dist_col"] >= 0.5 ) {
     # sample potential positions based on movement type of previous step, select next step based on minimum distance to colony
     if(track_output[i-1, "activity"] == "travel"){
-      potential.position <- potential_position_func(n = 10, 
-                                                    bearing = travel.bearing, 
-                                                    step = travel.step, 
+      potential_position <- potential_position_func(n = 10, 
+                                                    bearing = travel_bearing, 
+                                                    step = travel_step, 
                                                     from = track_output[i - 1, ],
-                                                    colony.location = initial.position, 
-                                                    resource.layer = resource.layer)  |>
+                                                    colony_location = initial_position, 
+                                                    resource_layer = resource_layer)  |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
-        subset(dist.col == min(dist.col)) 
-      if(nrow(potential.position > 1)) { potential.position <- potential.position[sample(1:nrow(potential.position), 1, replace = F),]  }
-      if(is.null(nrow(potential.position))) { # if no points possible then do it again 
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = travel.bearing, 
-                                                      step = travel.step, 
+        subset(dist_col == min(dist_col)) 
+      if(nrow(potential_position > 1)) { potential_position <- potential_position[sample(1:nrow(potential_position), 1, replace = F),]  }
+      if(is.null(nrow(potential_position))) { # if no points possible then do it again 
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = travel_bearing, 
+                                                      step = travel_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
-        subset(dist.col == min(dist.col))  
-        if(nrow(potential.position > 1)) { potential.position <- potential.position[sample(1:nrow(potential.position), 1, replace = F),]  }
+        subset(dist_col == min(dist_col))  
+        if(nrow(potential_position > 1)) { potential_position <- potential_position[sample(1:nrow(potential_position), 1, replace = F),]  }
       }
     }
     if(track_output[i-1, "activity"] == "forage"){
-      potential.position <- potential_position_func(n = 10, 
-                                                    bearing = foraging.bearing, 
-                                                    step = foraging.step, 
+      potential_position <- potential_position_func(n = 10, 
+                                                    bearing = foraging_bearing, 
+                                                    step = foraging_step, 
                                                     from = track_output[i - 1, ],
-                                                    colony.location = initial.position, 
-                                                    resource.layer = resource.layer)  |>
+                                                    colony_location = initial_position, 
+                                                    resource_layer = resource_layer)  |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
-        subset(dist.col == min(dist.col))  
-      if(nrow(potential.position > 1)) { potential.position <- potential.position[sample(1:nrow(potential.position), 1, replace = F),]  }
-      if(is.null(nrow(potential.position))) {  # if no points possible then do it again
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = foraging.bearing, 
-                                                      step = foraging.step, 
+        subset(dist_col == min(dist_col))  
+      if(nrow(potential_position > 1)) { potential_position <- potential_position[sample(1:nrow(potential_position), 1, replace = F),]  }
+      if(is.null(nrow(potential_position))) {  # if no points possible then do it again
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = foraging_bearing, 
+                                                      step = foraging_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
-        subset(dist.col == min(dist.col))  
-        if(nrow(potential.position > 1)) { potential.position <- potential.position[sample(1:nrow(potential.position), 1, replace = F),]  }
+        subset(dist_col == min(dist_col))  
+        if(nrow(potential_position > 1)) { potential_position <- potential_position[sample(1:nrow(potential_position), 1, replace = F),]  }
       }
     }
-    track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+    track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-    track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-    track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-    track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-    track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
-    track_output[i, "activity"] <- ifelse( potential.position$env >= activity.threshold, "forage", "travel")
+    track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+    track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+    track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+    track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
+    track_output[i, "activity"] <- ifelse( potential_position$env >= activity_threshold, "forage", "travel")
     
     i <- i +1
   }
   # add point at colony to end the track
-  track_output[i, c("Lon", "Lat")] <- initial.position[, c("Lon", "Lat")]
-  track_output[i, "dist.col"] <-  0
+  track_output[i, c("Lon", "Lat")] <- initial_position[, c("Lon", "Lat")]
+  track_output[i, "dist_col"] <-  0
   track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-  track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-  track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-  track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-  track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+  track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+  track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+  track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+  track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
   track_output[i, "activity"] <- "end"
   return(track_output)
 }
-# inherits checks for potential.positions
+# inherits checks for potential_positions
 ```
   
 ```{r example-simulate_trajectory_CPF}
@@ -446,42 +454,39 @@ library(viridis)
 library(tidyterra)
 library(lubridate)
 library(terra)
-colony.location <- data.frame(Lon = 20, Lat = 20)
+colony_location <- data.frame(Lon = 20, Lat = 20)
 cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-daylength <- insol::daylength(long = colony.location$Lon, 
-                              lat = colony.location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
-    
+ 
 # launch a travel for a duration of 12h
-single.traj <- simulate_trajectory_CPF(initial.position = colony.location, 
-                    resource.layer = cdt$rasters, 
-                    starting.hour = ymd_hms(sunrise), # departs at sunrise
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+single_traj <- simulate_trajectory_CPF(initial_position = colony_location, 
+                    resource_layer = cdt$rasters, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    max.dist = 40,
-                    step.duration = 5,
-                    activity.threshold = 0.70,
-                    max.duration = 720)
+                    max_dist = 40,
+                    step_duration = 5,
+                    activity_threshold = 0.70,
+                    max_duration = 720)
 
 # view the trajectory
-ggplot(single.traj) +
+ggplot(single_traj) +
   geom_spatraster(data = cdt$rasters) + 
   geom_point(aes(x = Lon, y = Lat, color = activity)) +
-  geom_point(data = colony.location, aes(x = Lon, y = Lat), col = "red") +
+  geom_point(data = colony_location, aes(x = Lon, y = Lat), col = "red") +
   scale_fill_viridis(option = "H") 
 
 # look at the density distribution of distance to colony and movement parameters
-ggplot(single.traj) + geom_density(aes(x = dist.col))
-ggplot(single.traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-ggplot(single.traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+ggplot(single_traj) + geom_density(aes(x = dist_col))
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = angle)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = step)) + facet_wrap("activity")
 
 ```
   
@@ -493,272 +498,267 @@ test_that("simulate_trajectory works", {
   library(viridis)
   library(tidyterra)
   library(lubridate)
-  colony.location <- data.frame(Lon = 50, Lat = 50)
+  colony_location <- data.frame(Lon = 50, Lat = 50)
   cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-  daylength <- insol::daylength(long = colony.location$Lon, 
-                              lat = colony.location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 
   expect_true(
-    is.data.frame(simulate_trajectory_CPF(initial.position = colony.location, 
-                    resource.layer = cdt$rasters, 
-                    starting.hour = ymd_hms(sunrise), 
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+    is.data.frame(simulate_trajectory_CPF(initial_position = colony_location, 
+                    resource_layer = cdt$rasters, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    max.dist = 40,
-                    step.duration = 5,
-                    activity.threshold = 0.70,
-                    max.duration = 100)))
+                    max_dist = 40,
+                    step_duration = 5,
+                    activity_threshold = 0.70,
+                    max_duration = 100)))
   
-    expect_error(simulate_trajectory_CPF(initial.position = colony.location, 
-                    resource.layer = colony.location, 
-                    starting.hour = ymd_hms(sunrise), 
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+    expect_error(simulate_trajectory_CPF(initial_position = colony_location, 
+                    resource_layer = colony_location, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    max.dist = 40,
-                    step.duration = 5,
-                    activity.threshold = 0.70,
-                    max.duration = 100))
+                    max_dist = 40,
+                    step_duration = 5,
+                    activity_threshold = 0.70,
+                    max_duration = 100))
     
-        expect_error(simulate_trajectory_CPF(initial.position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
-                        resource.layer = cdt$rasters, 
-                        starting.hour = ymd_hms(sunrise), 
-                        starting.bearing = c(90,10), 
-                        starting.step = c(4.5, 3),
-                        travel.bearing = c(0, 20), 
-                        travel.step = c(3, 3), 
-                        foraging.bearing = c(0, 0.5), 
-                        foraging.step = c(1, 3),
+        expect_error(simulate_trajectory_CPF(initial_position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
+                        resource_layer = cdt$rasters, 
+                        starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                        starting_bearing = c(90,10), 
+                        starting_step = c(4.5, 3),
+                        travel_bearing = c(0, 20), 
+                        travel_step = c(3, 3), 
+                        foraging_bearing = c(0, 0.5), 
+                        foraging_step = c(1, 3),
                         minx = 0, maxx = 40, 
                         miny = 0, maxy = 40,
-                        max.dist = 40,
-                        step.duration = 5,
-                        activity.threshold = 0.70,
-                        max.duration = 100))
+                        max_dist = 40,
+                        step_duration = 5,
+                        activity_threshold = 0.70,
+                        max_duration = 100))
 })
 ```
   
 
 # Simulate the trajectory of a non-central place forager
 
-Same as above, but the individual is not restrained around its colony and does not perform homing bout. Should add a condition on the time spent aorund a same area. 
+`simulate_trajectory_FR` does the same as above, but the individual is not restrained around its colony and does not perform homing bout. **Should add a condition on the time spent around a same area**. 
     
 ```{r function-simulate_trajectory_FR}
 #' Simulate individual trajectory
 #'
-#' @param initial.position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields)
-#' @param resource.layer SpatRaster of the resource layer
-#' @param starting.hour Starting hour
-#' @param starting.bearing Bearing when departing the colony (mu, kappa)
-#' @param starting.step Step length when departing the colony (mu, kappa)
-#' @param travel.bearing Bearing from previous step when traveling (mu, kappa)
-#' @param travel.step Distance from previous step when traveling (scale, rate) 
-#' @param foraging.bearing Bearing from previous step when foraging/searching (mu, kappa)
-#' @param foraging.step Distance from previous step when foraging (scale, rate)
+#' Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around its colony and does not perform homing bout. 
+#'
+#' @param initial_position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields)
+#' @param resource_layer SpatRaster of the resource layer
+#' @param starting_hour Starting hour
+#' @param starting_bearing Bearing when departing the colony (mu, kappa)
+#' @param starting_step Step length when departing the colony (mu, kappa)
+#' @param travel_bearing Bearing from previous step when traveling (mu, kappa)
+#' @param travel_step Distance from previous step when traveling (scale, rate) 
+#' @param foraging_bearing Bearing from previous step when foraging/searching (mu, kappa)
+#' @param foraging_step Distance from previous step when foraging (scale, rate)
 #' @param minx Minimum longitude of the bounding box to simulate trajectory within
 #' @param maxx Maximum longitude of the bounding box to simulate trajectory within
 #' @param miny Minimum latitude of the bounding box to simulate trajectory within
 #' @param maxy Maximum latitude of the bounding box to simulate trajectory within
-#' @param max.duration Total duration of a full trip, in minutes (defaults to 720, 12h)
-#' @param step.duration Duration of a step length, in minutes (defaults 1), defines the sampling interval
-#' @param activity.threshold Threshold environmental value defining when an individual switches from travelling to foraging movement
+#' @param max_duration Total duration of a full trip, in minutes (defaults to 720, 12h)
+#' @param step_duration Duration of a step length, in minutes (defaults 1), defines the sampling interval
+#' @param activity_threshold Threshold environmental value defining when an individual switches from travelling to foraging movement
 #'
 #' @import lubridate
-#' @importFrom dplyr full_join
-#' @importFrom dplyr slice_sample
-#' @importFrom dplyr slice_head
-#' @importFrom dplyr desc
-#' @importFrom dplyr arrange
+#' @importFrom dplyr full_join slice_sample slice_head desc arrange
+#' 
+#' @family individual movement functions
 #' 
 #' @return a data.frame
 #' @export
 #'
 #' @examples
-simulate_trajectory_FR <- function(initial.position, 
-                                resource.layer, 
-                       starting.hour,
-                       starting.bearing = c(90,10),
-                       starting.step = c(4.5, 3),
-                       travel.bearing = c(0, 20), # (mu, kappa) -> higher kappa = higher concentration
-                       travel.step = c(3, 3), #  (scale, rate) -> smaller the rate, higher the dispersion
-                       foraging.bearing = c(0, 0.5), 
-                       foraging.step = c(1, 3), 
+simulate_trajectory_FR <- function(initial_position, 
+                                resource_layer, 
+                       starting_hour,
+                       starting_bearing = c(90,10),
+                       starting_step = c(4.5, 3),
+                       travel_bearing = c(0, 20), # (mu, kappa) -> higher kappa = higher concentration
+                       travel_step = c(3, 3), #  (scale, rate) -> smaller the rate, higher the dispersion
+                       foraging_bearing = c(0, 0.5), 
+                       foraging_step = c(1, 3), 
                        minx = 0, maxx = 90, 
                        miny = 0, maxy = 90,
-                       step.duration = 1,
-                       activity.threshold = 0.5,
-                       max.duration = 720) 
+                       step_duration = 1,
+                       activity_threshold = 0.5,
+                       max_duration = 720) 
 {
-    if(isFALSE(initial.position$Lon >= minx & initial.position$Lon <= maxx &
-         initial.position$Lat >= miny & initial.position$Lat <= maxy)){
-    stop("initial.position must be included in the bounding box given by minx, maxx, miny and maxy")
+    if(isFALSE(initial_position$Lon >= minx & initial_position$Lon <= maxx &
+         initial_position$Lat >= miny & initial_position$Lat <= maxy)){
+    stop("initial_position must be included in the bounding box given by minx, maxx, miny and maxy")
   }
-  ext.coord <- as.vector(terra::ext(resource.layer))
-  if(isFALSE(initial.position$Lon >= ext.coord[[1]] & initial.position$Lon <= ext.coord[[2]] &
-            initial.position$Lat >= ext.coord[[3]] & initial.position$Lat <= ext.coord[[4]])){
-    stop("initial.position must be included in the resource.layer extent")
+  ext_coord <- as.vector(terra::ext(resource_layer))
+  if(isFALSE(initial_position$Lon >= ext_coord[[1]] & initial_position$Lon <= ext_coord[[2]] &
+            initial_position$Lat >= ext_coord[[3]] & initial_position$Lat <= ext_coord[[4]])){
+    stop("initial_position must be included in the resource_layer extent")
   }
-  if(nrow(initial.position) != 1){
-    stop("initial.position must include a single row")
+  if(nrow(initial_position) != 1){
+    stop("initial_position must include a single row")
   }
   
-  track_output <- data.frame(Lon = initial.position$Lon,
-                             Lat = initial.position$Lat,
+  track_output <- data.frame(Lon = initial_position$Lon,
+                             Lat = initial_position$Lat,
                              angle = NA,
                              step = 0,
                              env = NA,
-                             dist.col = 0,
+                             dist_col = 0,
                              activity = "start",
                              stepID = 0,
-                             ymd.hms = starting.hour,
-                             x.from = initial.position$Lon,
-                             y.from = initial.position$Lat,
-                             date.from = starting.hour)
+                             ymd_hms = starting_hour,
+                             x_from = initial_position$Lon,
+                             y_from = initial_position$Lat,
+                             date_from = starting_hour)
   
   ### Departs from the colony - outbound phase of travel and foraging bouts
   i <- 2
-  while(track_output[i-1, "ymd.hms"] < ymd_hms(starting.hour) + lubridate::minutes(max.duration)
+  while(track_output[i-1, "ymd_hms"] < ymd_hms(starting_hour) + lubridate::minutes(max_duration)
   ){
     # starts with the initial bearing
     if(i == 2){ 
-      potential.position <- potential_position_func(n = 10, 
-                                                    bearing = starting.bearing, 
-                                                    step = starting.step, 
+      potential_position <- potential_position_func(n = 10, 
+                                                    bearing = starting_bearing, 
+                                                    step = starting_step, 
                                                     from = track_output[i - 1, ],
-                                                    colony.location = initial.position, 
-                                                    resource.layer = resource.layer) |>
+                                                    colony_location = initial_position, 
+                                                    resource_layer = resource_layer) |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
         dplyr::slice_sample(n = 1)
-      if(is.null(nrow(potential.position))) { # if no points possible then do it again
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = starting.bearing, 
-                                                      step = starting.step, 
+      if(is.null(nrow(potential_position))) { # if no points possible then do it again
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = starting_bearing, 
+                                                      step = starting_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny) |>
           dplyr::slice_sample(n = 1)
         } 
-      track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+      track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-      track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-      track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-      track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-      track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+      track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+      track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+      track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+      track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
       track_output[i, "activity"] <- "travel"
     }
     # continue with traveling parameters but not yet condition on environment
     if(i %in% c(3:5)){
-      potential.position <- potential_position_func(n = 10, 
-                                                    bearing = travel.bearing, 
-                                                    step = travel.step, 
+      potential_position <- potential_position_func(n = 10, 
+                                                    bearing = travel_bearing, 
+                                                    step = travel_step, 
                                                     from = track_output[i - 1, ],
-                                                    colony.location = initial.position, 
-                                                    resource.layer = resource.layer) |>
+                                                    colony_location = initial_position, 
+                                                    resource_layer = resource_layer) |>
         subset(Lon < maxx & Lon > minx) |>
         subset(Lat < maxy & Lat > miny) |>
         dplyr::slice_sample(n = 1) 
-      if(is.null(nrow(potential.position))) { # if no points possible then do it again
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = travel.bearing, 
-                                                      step = travel.step, 
+      if(is.null(nrow(potential_position))) { # if no points possible then do it again
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = travel_bearing, 
+                                                      step = travel_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny) |>
           dplyr::slice_sample(n = 1) 
       } 
-      track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+      track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-      track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-      track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-      track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-      track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+      track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+      track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+      track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+      track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
       track_output[i, "activity"] <- "travel"
     }else{
     ### Starts foraging bouts
       # sample potential positions based on movement type of previous step and select next step based on environment
       if(track_output[i-1, "activity"] == "travel"){
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = travel.bearing, 
-                                                      step = travel.step, 
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = travel_bearing, 
+                                                      step = travel_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           dplyr::arrange(dplyr::desc(env)) |> # ordre d?croissant selon env
           dplyr::slice_head(n = 4) |> # prend les 4 premiers points
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny) 
-          if(!is.null(nrow(potential.position))) {  # random select among the remaining points, if the table is not empty
-            potential.position <- potential.position |> dplyr::slice_sample(n = 1) }
-        if(is.null(nrow(potential.position))) { 
-          potential.position <- potential_position_func(n = 10, 
-                                                        bearing = travel.bearing, 
-                                                        step = travel.step, 
+          if(!is.null(nrow(potential_position))) {  # random select among the remaining points, if the table is not empty
+            potential_position <- potential_position |> dplyr::slice_sample(n = 1) }
+        if(is.null(nrow(potential_position))) { 
+          potential_position <- potential_position_func(n = 10, 
+                                                        bearing = travel_bearing, 
+                                                        step = travel_step, 
                                                         from = track_output[i - 1, ],
-                                                        colony.location = initial.position, 
-                                                        resource.layer = resource.layer) |>
+                                                        colony_location = initial_position, 
+                                                        resource_layer = resource_layer) |>
             dplyr::arrange(dplyr::desc(env)) |>
             dplyr::slice_head(n = 4) |>
             subset(Lon < maxx & Lon > minx) |>
             subset(Lat < maxy & Lat > miny)
-            if(!is.null(nrow(potential.position))) {  
-              potential.position <- potential.position |> dplyr::slice_sample(n = 1) }
+            if(!is.null(nrow(potential_position))) {  
+              potential_position <- potential_position |> dplyr::slice_sample(n = 1) }
         }
       }
       if(track_output[i-1, "activity"] == "forage"){
-        potential.position <- potential_position_func(n = 10, 
-                                                      bearing = foraging.bearing, 
-                                                      step = foraging.step, 
+        potential_position <- potential_position_func(n = 10, 
+                                                      bearing = foraging_bearing, 
+                                                      step = foraging_step, 
                                                       from = track_output[i - 1, ],
-                                                      colony.location = initial.position, 
-                                                      resource.layer = resource.layer) |>
+                                                      colony_location = initial_position, 
+                                                      resource_layer = resource_layer) |>
           dplyr::arrange(dplyr::desc(env)) |> # ordre d?croissant selon env
           dplyr::slice_head(n = 4) |> # prend les 4 premiers points
           subset(Lon < maxx & Lon > minx) |>
           subset(Lat < maxy & Lat > miny)
-          if(!is.null(nrow(potential.position))) {  
-            potential.position <- potential.position |> dplyr::slice_sample(n = 1) } #  subset(step == min(step))
-        if(is.null(nrow(potential.position))) {  # if no points possible then do it again
-          potential.position <- potential_position_func(n = 10, 
-                                                        bearing = foraging.bearing, 
-                                                        step = foraging.step, 
+          if(!is.null(nrow(potential_position))) {  
+            potential_position <- potential_position |> dplyr::slice_sample(n = 1) } #  subset(step == min(step))
+        if(is.null(nrow(potential_position))) {  # if no points possible then do it again
+          potential_position <- potential_position_func(n = 10, 
+                                                        bearing = foraging_bearing, 
+                                                        step = foraging_step, 
                                                         from = track_output[i - 1, ],
-                                                        colony.location = initial.position, 
-                                                        resource.layer = resource.layer) |>
+                                                        colony_location = initial_position, 
+                                                        resource_layer = resource_layer) |>
             dplyr::arrange(dplyr::desc(env)) |>
             dplyr::slice_head(n = 4) |>
             subset(Lon < maxx & Lon > minx) |>
             subset(Lat < maxy & Lat > miny)
-          if(!is.null(nrow(potential.position))) {  
-            potential.position <- potential.position |> dplyr::slice_sample(n = 1) }
+          if(!is.null(nrow(potential_position))) {  
+            potential_position <- potential_position |> dplyr::slice_sample(n = 1) }
         }
       }
-      track_output[i, c("Lon","Lat","angle","step","env","dist.col")] <- potential.position[, c("Lon","Lat","angle","step","env","dist.col")]
+      track_output[i, c("Lon","Lat","angle","step","env","dist_col")] <- potential_position[, c("Lon","Lat","angle","step","env","dist_col")]
       track_output[i, "stepID"] <-  track_output[i-1, "stepID"] + 1
-      track_output[i, "ymd.hms"] <-  track_output[i-1, "ymd.hms"] + lubridate::minutes(step.duration)
-      track_output[i, "x.from"] <-  track_output[i-1, "Lon"]
-      track_output[i, "y.from"] <-  track_output[i-1, "Lat"]
-      track_output[i, "date.from"] <-  track_output[i-1, "ymd.hms"]
+      track_output[i, "ymd_hms"] <-  track_output[i-1, "ymd_hms"] + lubridate::minutes(step_duration)
+      track_output[i, "x_from"] <-  track_output[i-1, "Lon"]
+      track_output[i, "y_from"] <-  track_output[i-1, "Lat"]
+      track_output[i, "date_from"] <-  track_output[i-1, "ymd_hms"]
       # evaluate whether traveling or foraging (if env >= 0.5 = switch) for next step
-      track_output[i, "activity"] <- ifelse( potential.position$env >= activity.threshold, "forage", "travel") 
+      track_output[i, "activity"] <- ifelse( potential_position$env >= activity_threshold, "forage", "travel") 
     }
     i = i +1  
     }
@@ -772,42 +772,37 @@ library(ggplot2)
 library(viridis)
 library(tidyterra)
 library(lubridate)
-colony.location <- data.frame(Lon = 50, Lat = 50)
+colony_location <- data.frame(Lon = 50, Lat = 50)
 cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 4)
-terra::plot(cdt$rasters)
-# determine the sunrise hour for a random dat
-daylength <- insol::daylength(long = colony.location$Lon, 
-                              lat = colony.location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
     
-single.traj <- simulate_trajectory_FR(initial.position = colony.location, 
-                    resource.layer = cdt$rasters, 
-                    starting.hour = ymd_hms(sunrise), # departs at sunrise
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+single_traj <- simulate_trajectory_FR(initial_position = colony_location, 
+                    resource_layer = cdt$rasters, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    step.duration = 1,
-                    activity.threshold = 0.7,
-                    max.duration = 2000)
+                    step_duration = 1,
+                    activity_threshold = 0.7,
+                    max_duration = 2000)
 
 # view the trajectory
-ggplot(single.traj) +
+ggplot(single_traj) +
   geom_spatraster(data = cdt$rasters) + 
   geom_point(aes(x = Lon, y = Lat, color = activity)) +
-  geom_point(data = colony.location, aes(x = Lon, y = Lat), col = "red") +
+  geom_point(data = colony_location, aes(x = Lon, y = Lat), col = "red") +
   scale_fill_viridis(option = "H") 
 
 # look at the density distribution of distance to colony and movement parameters
-ggplot(single.traj) + geom_density(aes(x = dist.col))
-ggplot(single.traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-ggplot(single.traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+ggplot(single_traj) + geom_density(aes(x = dist_col))
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = angle)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = step)) + facet_wrap("activity")
 
 
 ```
@@ -820,59 +815,54 @@ test_that("simulate_trajectory works", {
   library(viridis)
   library(tidyterra)
   library(lubridate)
-  colony.location <- data.frame(Lon = 50, Lat = 50)
+  colony_location <- data.frame(Lon = 50, Lat = 50)
   cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-  daylength <- insol::daylength(long = colony.location$Lon, 
-                              lat = colony.location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 
   expect_true(
-    is.data.frame(simulate_trajectory_FR(initial.position = colony.location, 
-                    resource.layer = cdt$rasters, 
-                    starting.hour = ymd_hms(sunrise), # departs at sunrise
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+    is.data.frame(simulate_trajectory_FR(initial_position = colony_location, 
+                    resource_layer = cdt$rasters, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    step.duration = 1,
-                    activity.threshold = 0.7,
-                    max.duration = 100)))
+                    step_duration = 1,
+                    activity_threshold = 0.7,
+                    max_duration = 100)))
   
-  expect_error(simulate_trajectory_FR(initial.position = colony.location, 
-                    resource.layer = colony.location, 
-                    starting.hour = ymd_hms(sunrise), 
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+  expect_error(simulate_trajectory_FR(initial_position = colony_location, 
+                    resource_layer = colony_location, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    step.duration = 5,
-                    activity.threshold = 0.70,
-                    max.duration = 100))
+                    step_duration = 5,
+                    activity_threshold = 0.70,
+                    max_duration = 100))
   
-  expect_error(simulate_trajectory_FR(initial.position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
-                        resource.layer = cdt$rasters, 
-                        starting.hour = ymd_hms(sunrise), 
-                        starting.bearing = c(90,10), 
-                        starting.step = c(4.5, 3),
-                        travel.bearing = c(0, 20), 
-                        travel.step = c(3, 3), 
-                        foraging.bearing = c(0, 0.5), 
-                        foraging.step = c(1, 3),
+  expect_error(simulate_trajectory_FR(initial_position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
+                        resource_layer = cdt$rasters, 
+                        starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                        starting_bearing = c(90,10), 
+                        starting_step = c(4.5, 3),
+                        travel_bearing = c(0, 20), 
+                        travel_step = c(3, 3), 
+                        foraging_bearing = c(0, 0.5), 
+                        foraging_step = c(1, 3),
                         minx = 0, maxx = 40, 
                         miny = 0, maxy = 40,
-                        step.duration = 5,
-                        activity.threshold = 0.70,
-                        max.duration = 100))
+                        step_duration = 5,
+                        activity_threshold = 0.70,
+                        max_duration = 100))
   
 
 })
@@ -884,6 +874,8 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
 ```{r development-inflate, eval=FALSE}
 # Run but keep eval=FALSE to avoid infinite loop
 # Execute in the console directly
-fusen::inflate(flat_file = "dev/flat_simulate_mvmt.Rmd", vignette_name = "Simulate individual movements")
+fusen::inflate(flat_file = "dev/flat_simulate_mvmt.Rmd", 
+               vignette_name = "Simulate individual movements", 
+               overwrite = T, check = F)
 ```
 

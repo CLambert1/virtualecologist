@@ -3,7 +3,7 @@
 test_that("generate_env_layer works", {
 
   grid <- create_grid()
-  output <- generate_env_layer(norm = FALSE, return.rasters = FALSE, grid = grid)
+  output <- generate_env_layer(norm = FALSE, return_rasters = FALSE, grid = grid)
 
   expect_true(inherits(output, "data.frame"))
 

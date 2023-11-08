@@ -7,59 +7,54 @@ test_that("simulate_trajectory works", {
   library(viridis)
   library(tidyterra)
   library(lubridate)
-  colony.location <- data.frame(Lon = 50, Lat = 50)
+  colony_location <- data.frame(Lon = 50, Lat = 50)
   cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-  daylength <- insol::daylength(long = colony.location$Lon, 
-                              lat = colony.location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 
   expect_true(
-    is.data.frame(simulate_trajectory_FR(initial.position = colony.location, 
-                    resource.layer = cdt$rasters, 
-                    starting.hour = ymd_hms(sunrise), # departs at sunrise
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+    is.data.frame(simulate_trajectory_FR(initial_position = colony_location, 
+                    resource_layer = cdt$rasters, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    step.duration = 1,
-                    activity.threshold = 0.7,
-                    max.duration = 100)))
+                    step_duration = 1,
+                    activity_threshold = 0.7,
+                    max_duration = 100)))
   
-  expect_error(simulate_trajectory_FR(initial.position = colony.location, 
-                    resource.layer = colony.location, 
-                    starting.hour = ymd_hms(sunrise), 
-                    starting.bearing = c(90,10), 
-                    starting.step = c(4.5, 3),
-                    travel.bearing = c(0, 20), 
-                    travel.step = c(3, 3), 
-                    foraging.bearing = c(0, 0.5), 
-                    foraging.step = c(1, 3),
+  expect_error(simulate_trajectory_FR(initial_position = colony_location, 
+                    resource_layer = colony_location, 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                    starting_bearing = c(90,10), 
+                    starting_step = c(4.5, 3),
+                    travel_bearing = c(0, 20), 
+                    travel_step = c(3, 3), 
+                    foraging_bearing = c(0, 0.5), 
+                    foraging_step = c(1, 3),
                     minx = 0, maxx = 90, 
                     miny = 0, maxy = 90,
-                    step.duration = 5,
-                    activity.threshold = 0.70,
-                    max.duration = 100))
+                    step_duration = 5,
+                    activity_threshold = 0.70,
+                    max_duration = 100))
   
-  expect_error(simulate_trajectory_FR(initial.position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
-                        resource.layer = cdt$rasters, 
-                        starting.hour = ymd_hms(sunrise), 
-                        starting.bearing = c(90,10), 
-                        starting.step = c(4.5, 3),
-                        travel.bearing = c(0, 20), 
-                        travel.step = c(3, 3), 
-                        foraging.bearing = c(0, 0.5), 
-                        foraging.step = c(1, 3),
+  expect_error(simulate_trajectory_FR(initial_position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
+                        resource_layer = cdt$rasters, 
+                        starting_hour = ymd_hms("2022-08-02 06:00:00"), 
+                        starting_bearing = c(90,10), 
+                        starting_step = c(4.5, 3),
+                        travel_bearing = c(0, 20), 
+                        travel_step = c(3, 3), 
+                        foraging_bearing = c(0, 0.5), 
+                        foraging_step = c(1, 3),
                         minx = 0, maxx = 40, 
                         miny = 0, maxy = 40,
-                        step.duration = 5,
-                        activity.threshold = 0.70,
-                        max.duration = 100))
+                        step_duration = 5,
+                        activity_threshold = 0.70,
+                        max_duration = 100))
   
 
 })
