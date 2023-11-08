@@ -2,19 +2,16 @@
 
 test_that("assign_flight_plan works", {
   
-  surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+  surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
                              buffer = TRUE, buffer_width = 0.2
-                             )
-
-  flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
-                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
+  )
 
   expect_error(
     object = assign_flight_plan(
     sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
+    flight_id =  c(1:468),
     col_trans_id = "toto",
     flight_day = "2022-02-08", 
     survey_start_hour = "06:00:00",
@@ -26,7 +23,7 @@ test_that("assign_flight_plan works", {
   expect_error(
     object = assign_flight_plan(
     sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
+    flight_id =  c(1:468),
     col_trans_id = "transect",
     flight_day = 2022, 
     survey_start_hour = "06:00:00",
@@ -38,7 +35,7 @@ test_that("assign_flight_plan works", {
   expect_error(
     object = assign_flight_plan(
     sf_segments = surv$segments,
-    flight_id = flight_id,
+    flight_id =  c(1:468),
     col_trans_id = "transect",
     flight_day = "2022-02-08", 
     survey_start_hour = "06:00:00",

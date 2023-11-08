@@ -60,7 +60,7 @@ simulate_trajectory_FR(
 a data.frame
 }
 \description{
-Simulate individual trajectory
+Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around its colony and does not perform homing bout.
 }
 \examples{
 library(ggplot2)
@@ -69,17 +69,10 @@ library(tidyterra)
 library(lubridate)
 colony_location <- data.frame(Lon = 50, Lat = 50)
 cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 4)
-terra::plot(cdt$rasters)
-# determine the sunrise hour for a random dat
-daylength <- insol::daylength(long = colony_location$Lon, 
-                              lat = colony_location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "\%H:\%M", tz = "UTC"))
     
 single_traj <- simulate_trajectory_FR(initial_position = colony_location, 
                     resource_layer = cdt$rasters, 
-                    starting_hour = ymd_hms(sunrise), # departs at sunrise
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -101,8 +94,18 @@ ggplot(single_traj) +
 
 # look at the density distribution of distance to colony and movement parameters
 ggplot(single_traj) + geom_density(aes(x = dist_col))
-ggplot(single_traj |> subset(activity \%in\% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-ggplot(single_traj |> subset(activity \%in\% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity \%in\% c("forage", "travel"))) + 
+  geom_density(aes(x = angle)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity \%in\% c("forage", "travel"))) + 
+  geom_density(aes(x = step)) + facet_wrap("activity")
 
 
 }
+\seealso{
+Other individual movement functions: 
+\code{\link{potential_position_func}()},
+\code{\link{randomdir}()},
+\code{\link{randomdist}()},
+\code{\link{simulate_trajectory_CPF}()}
+}
+\concept{individual movement functions}

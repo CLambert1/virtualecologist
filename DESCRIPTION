@@ -17,6 +17,7 @@ Imports:
     gstat,
     lubridate,
     magrittr,
+    methods,
     purrr,
     qdapTools,
     raster,
@@ -29,13 +30,12 @@ Imports:
     stats,
     terra,
     tibble,
-    tidyr
+    tidyr,
+    utils
 Suggests: 
     ggplot2,
-    insol,
     knitr,
     rmarkdown,
-    testthat,
     tidyterra,
     viridis
 VignetteBuilder: 

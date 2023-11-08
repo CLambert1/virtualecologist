@@ -9,34 +9,34 @@ editor_options:
 <!-- Store every call to library() that you need to explore your functions -->
 
 ```{r development, include=FALSE}
-library(geoR)
-
-sim1 <- grf(100, cov.pars = c(1, .25))
-# a display of simulated locations and values
-points(sim1)   
-# empirical and theoretical variograms
-plot(sim1)
-## alternative way
-plot(variog(sim1, max.dist=1))
-lines.variomodel(sim1)
-#
-# a "smallish" simulation
-sim2 <- grf(441, grid = "reg", cov.pars = c(1, .25)) 
-image(sim2)
-
-tt <- grf(grid = as.matrix(grid), n = 32761, xlims = c(0,90), ylims = c(0,90),
-          cov.pars = c(1, .25), lambda = 1)
-image(tt)
-
-## simulating within borders
-data(parana)
-pr1 <- grf(100, cov.pars=c(200, 40), borders=parana$borders, mean=500)
-points(pr1)
-pr1 <- grf(100, grid="reg", cov.pars=c(200, 40), borders=parana$borders)
-points(pr1)
-pr1 <- grf(100, grid="reg", nx=10, ny=5, cov.pars=c(200, 40), borders=parana$borders)
-points(pr1)
-
+# library(geoR)
+# 
+# sim1 <- grf(100, cov.pars = c(1, .25))
+# # a display of simulated locations and values
+# points(sim1)   
+# # empirical and theoretical variograms
+# plot(sim1)
+# ## alternative way
+# plot(variog(sim1, max.dist=1))
+# lines.variomodel(sim1)
+# #
+# # a "smallish" simulation
+# sim2 <- grf(441, grid = "reg", cov.pars = c(1, .25)) 
+# image(sim2)
+# 
+# tt <- grf(grid = as.matrix(grid), n = 32761, xlims = c(0,90), ylims = c(0,90),
+#           cov.pars = c(1, .25), lambda = 1)
+# image(tt)
+# 
+# ## simulating within borders
+# data(parana)
+# pr1 <- grf(100, cov.pars=c(200, 40), borders=parana$borders, mean=500)
+# points(pr1)
+# pr1 <- grf(100, grid="reg", cov.pars=c(200, 40), borders=parana$borders)
+# points(pr1)
+# pr1 <- grf(100, grid="reg", nx=10, ny=5, cov.pars=c(200, 40), borders=parana$borders)
+# points(pr1)
+# 
 
 ```
 
@@ -82,28 +82,6 @@ test_that("create_grid works", {
 })
 ```
   
-```{r function-utils}
-#' Not in
-#'
-#' @param x,y Numeric vectors
-#' 
-#' @return Boolean
-#' @export
-#'
-'%!in%' <- function(x,y)!('%in%'(x,y))
-
-#' Normalize a vector
-#'
-#' @param cov a vector
-#' 
-#' @return a vector
-#' @export
-normalize <- function(cov){ (cov-min(cov))/(max(cov)-min(cov)) }
-# normalize <- function(cov){ cov/max(cov) }
-
-
-```
-
 
 # Generating environmental layers
 
@@ -122,6 +100,8 @@ The \code{\link{generate_env_layer}} function creates several environmental laye
 #'
 #' @return Returns a data frame with the simulated environmental values, as well as SpatRast is return_rasters = TRUE
 #' @export
+#' 
+#' @family environment simulation functions
 #' 
 #' @importFrom gstat gstat vgm
 #' @importFrom terra rast
@@ -205,11 +185,13 @@ The \code{\link{generate_resource_layer}} function permits building a suitabilit
 #' 
 #' @return Returns a data frame with the suitability layer, as well as SpatRast is return_rasters = TRUE
 #' @export
+#' 
+#' @family environment simulation functions
 #'
 #' @examples
 generate_resource_layer <- function(beta, env_layers, coordinate_fields = c("x", "y"), norm = TRUE, return_rasters = TRUE){
   # check input format
-  if(class(env_layers) %!in% c("SpatRaster", "data.frame")){
+  if(isFALSE(class(env_layers) %in% c("SpatRaster", "data.frame"))){
     stop("env_layers must be of class SpatRast or data.frame")
   }
   ##### Better TRY INHERITS OR IS()
@@ -301,6 +283,8 @@ test_that("generate_resource_layer works", {
 ```{r development-inflate, eval=FALSE}
 # Keep eval=FALSE to avoid infinite loop in case you hit the knit button
 # Execute in the console directly
-fusen::inflate(flat_file = "dev/flat_simulate_env.Rmd", vignette_name = "Simulate virtual environment")
+fusen::inflate(flat_file = "dev/flat_simulate_env.Rmd", 
+               vignette_name = "Simulate virtual environment", 
+               overwrite = T, check = FALSE)
 ```
 

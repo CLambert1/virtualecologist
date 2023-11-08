@@ -14,6 +14,8 @@
 #' 
 #' @return Returns a data frame with the suitability layer, as well as SpatRast is return_rasters = TRUE
 #' @export
+#' 
+#' @family environment simulation functions
 #'
 #' @examples
 #' library(terra)
@@ -31,7 +33,7 @@
 #'                             beta = c(2, -1.5, 3)) )
 generate_resource_layer <- function(beta, env_layers, coordinate_fields = c("x", "y"), norm = TRUE, return_rasters = TRUE){
   # check input format
-  if(class(env_layers) %!in% c("SpatRaster", "data.frame")){
+  if(isFALSE(class(env_layers) %in% c("SpatRaster", "data.frame"))){
     stop("env_layers must be of class SpatRast or data.frame")
   }
   ##### Better TRY INHERITS OR IS()

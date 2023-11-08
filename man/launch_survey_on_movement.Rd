@@ -36,30 +36,43 @@ launch_survey_on_movement(
 \item{detection_function}{character, half-normal ("hn") or hasard rate ("hr") detection function, default to "hn"}
 }
 \value{
-A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column (N_ind_detected) summarising the number of individuals detected based on distance to the track line.
+A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column ("N_ind_detected") summarising the number of individuals detected based on distance to the track line.
 }
 \description{
 This function identifies the individuals detected during a standardised survey by spatial and temporal matching between segments and movement bouts of individuals. The default behaviour emulates a strip-transect survey, by considering individuals falling within a strip around the surveyed segments to be detected, but line-transect methodology can also be emulated by setting line-transect to TRUE. In this case, the actual detection of individuals is conditioned by their distance to the track line (probability of detection is computed using either half-normal of hazard rate detection functions).
 }
 \examples{
 # an example with a small number of individuals
-survey <- launch_survey_on_movement(
+survey <- suppressMessages(launch_survey_on_movement(
   survey_data_buffered = example_data$flight_plan,
   survey_data_linear = example_data$survey$segments,
   traj_data = example_data$mvmt_data,
   line_transect = TRUE, detection_function = "hn",
   sigma = 0.2
-)
+))
 
 # look at the number of sightings
 summary(survey$effort_table$N_ind_tot)
 
-plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), xlab = "distance to the track line", ylab = "detection probability")
+plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), 
+     xlab = "distance to the track line", ylab = "detection probability")
 
 # all sightings are in a few segments
 library(ggplot2)
 ggplot(survey$effort_table) +
-  geom_sf(data = survey$obs_table, aes(shape = as.factor(detected)), size = 2) +
-  geom_sf(aes(fill = N_ind_tot)) + viridis::scale_fill_viridis(limits = c(1,10), na.value = NA, alpha = 0.5)
+  geom_sf(data = survey$obs_table, 
+          aes(shape = as.factor(detected)), size = 2) +
+  geom_sf(aes(fill = N_ind_tot)) + 
+  viridis::scale_fill_viridis(limits = c(1,10), 
+                              na.value = NA, alpha = 0.5)
 
 }
+\seealso{
+\code{\link{simulate_trajectory_CPF()}} \code{\link{simulate_trajectory_FR()}}
+
+Other survey simulation functions: 
+\code{\link{assign_flight_plan}()},
+\code{\link{detection_process}()},
+\code{\link{generate_survey_plan}()}
+}
+\concept{survey simulation functions}

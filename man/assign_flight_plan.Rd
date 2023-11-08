@@ -36,30 +36,22 @@ a sf table with four additional columns (transect_id, flight_id, start_time and 
 Assign a flight plan to a survey design
 }
 \examples{
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
                              buffer = TRUE, buffer_width = 0.2
-                             )
+)
 
-# Here, set up a flight plan where the first transect is flown in a given 
-# direction, the second in the other direction etc, so that the aircraft 
-# does not need to go all the way to the other side of the survey area 
-# to start a new transect. The intransect.gap.duration is thus set to 1 minute, 
-# a the flight speed to 160 km/h (the classical speed for aerial surveys). 
-# in that case, the survey duration for a single segment is 22.5 seconds. 
-flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
-                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
 
 # assign the time periods to each segment
 flight_plan <- assign_flight_plan(
-    sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
-    col_trans_id = "transect",
-    flight_day = "2022-02-08", 
-    survey_start_hour = "06:00:00",
-    flight_speed = 160,
-    intertransect_gap_duration = 60
+  sf_segments = surv$buffered_segments,
+  flight_id = c(1:468),
+  col_trans_id = "transect",
+  flight_day = "2022-08-01",
+  survey_start_hour = "06:00:00",
+  flight_speed = 160,
+  intertransect_gap_duration = 60*30
 )
 
 # plot to check everything is ok
@@ -76,3 +68,10 @@ ggplot(flight_plan) +
     geom_sf(aes(fill = flight_id),
             color = "black", size = 0.2)
 }
+\seealso{
+Other survey simulation functions: 
+\code{\link{detection_process}()},
+\code{\link{generate_survey_plan}()},
+\code{\link{launch_survey_on_movement}()}
+}
+\concept{survey simulation functions}

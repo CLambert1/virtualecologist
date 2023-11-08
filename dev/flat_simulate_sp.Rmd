@@ -205,6 +205,7 @@ To do : add an id to each generated obs (only done when n_sim = 1)
 #' @importFrom tidyr drop_na
 #' @importFrom spatstat.geom as.im
 #' 
+#' @seealso \code{\link{generate_resource_layer()}} \code{\link{generate_env_layers()}}
 #' 
 #' @return Returns an sf object
 #' @export
@@ -332,6 +333,8 @@ test_that("simul_spat works", {
 ```{r development-inflate, eval=FALSE}
 # Run but keep eval=FALSE to avoid infinite loop
 # Execute in the console directly
-fusen::inflate(flat_file = "dev/flat_simulate_sp.Rmd", vignette_name = "Simulate virtual species")
+fusen::inflate(flat_file = "dev/flat_simulate_sp.Rmd", 
+               vignette_name = "Simulate virtual species", 
+               overwrite = T, check = FALSE)
 ```
 

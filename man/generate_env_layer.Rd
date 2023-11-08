@@ -42,3 +42,8 @@ library(terra)
 plot(generate_env_layer(norm = TRUE, return_rasters = TRUE, grid = grid)$rasters)
 plot(generate_env_layer(norm = FALSE, return_rasters = TRUE, grid = grid)$rasters)
 }
+\seealso{
+Other environment simulation functions: 
+\code{\link{generate_resource_layer}()}
+}
+\concept{environment simulation functions}

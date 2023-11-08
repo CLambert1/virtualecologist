@@ -3,7 +3,8 @@ pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
   simulate-individual-movements: simulate-individual-movements.html
+  simulate-survey: simulate-survey.html
   simulate-virtual-environment: simulate-virtual-environment.html
   simulate-virtual-species: simulate-virtual-species.html
-last_built: 2023-10-31T20:32Z
+last_built: 2023-11-08T11:03Z
 

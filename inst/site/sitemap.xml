@@ -10,6 +10,9 @@
     <loc>/articles/simulate-individual-movements.html</loc>
   </url>
   <url>
+    <loc>/articles/simulate-survey.html</loc>
+  </url>
+  <url>
     <loc>/articles/simulate-virtual-environment.html</loc>
   </url>
   <url>
@@ -34,10 +37,28 @@
     <loc>/news/index.html</loc>
   </url>
   <url>
+    <loc>/reference/assign_flight_plan.html</loc>
+  </url>
+  <url>
+    <loc>/reference/CreateSegments.html</loc>
+  </url>
+  <url>
     <loc>/reference/create_grid.html</loc>
   </url>
   <url>
     <loc>/reference/custom_proj.html</loc>
+  </url>
+  <url>
+    <loc>/reference/Detection_functions.html</loc>
+  </url>
+  <url>
+    <loc>/reference/detection_process.html</loc>
+  </url>
+  <url>
+    <loc>/reference/detfunc_hr.html</loc>
+  </url>
+  <url>
+    <loc>/reference/example_data.html</loc>
   </url>
   <url>
     <loc>/reference/generate_env_layer.html</loc>
@@ -46,10 +67,22 @@
     <loc>/reference/generate_resource_layer.html</loc>
   </url>
   <url>
+    <loc>/reference/generate_survey_plan.html</loc>
+  </url>
+  <url>
     <loc>/reference/grapes-not-in-grapes.html</loc>
   </url>
   <url>
     <loc>/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>/reference/launch_help.html</loc>
+  </url>
+  <url>
+    <loc>/reference/launch_survey_on_movement.html</loc>
+  </url>
+  <url>
+    <loc>/reference/Merge.html</loc>
   </url>
   <url>
     <loc>/reference/normalize.html</loc>
@@ -62,6 +95,12 @@
   </url>
   <url>
     <loc>/reference/randomdist.html</loc>
+  </url>
+  <url>
+    <loc>/reference/Segmentize.html</loc>
+  </url>
+  <url>
+    <loc>/reference/SegmentSpatialLines.html</loc>
   </url>
   <url>
     <loc>/reference/simtools-package.html</loc>

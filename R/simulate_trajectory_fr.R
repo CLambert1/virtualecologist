@@ -2,6 +2,8 @@
 
 #' Simulate individual trajectory
 #'
+#' Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around its colony and does not perform homing bout. 
+#'
 #' @param initial_position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields)
 #' @param resource_layer SpatRaster of the resource layer
 #' @param starting_hour Starting hour
@@ -22,6 +24,8 @@
 #' @import lubridate
 #' @importFrom dplyr full_join slice_sample slice_head desc arrange
 #' 
+#' @family individual movement functions
+#' 
 #' @return a data.frame
 #' @export
 #'
@@ -32,17 +36,10 @@
 #' library(lubridate)
 #' colony_location <- data.frame(Lon = 50, Lat = 50)
 #' cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 4)
-#' terra::plot(cdt$rasters)
-#' # determine the sunrise hour for a random dat
-#' daylength <- insol::daylength(long = colony_location$Lon, 
-#'                               lat = colony_location$Lat, 
-#'                               jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-#' sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-#'                              origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 #'     
 #' single_traj <- simulate_trajectory_FR(initial_position = colony_location, 
 #'                     resource_layer = cdt$rasters, 
-#'                     starting_hour = ymd_hms(sunrise), # departs at sunrise
+#'                     starting_hour = ymd_hms("2022-08-02 06:00:00"),
 #'                     starting_bearing = c(90,10), 
 #'                     starting_step = c(4.5, 3),
 #'                     travel_bearing = c(0, 20), 
@@ -64,8 +61,10 @@
 #'
 #' # look at the density distribution of distance to colony and movement parameters
 #' ggplot(single_traj) + geom_density(aes(x = dist_col))
-#' ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-#' ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+#' ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+#'   geom_density(aes(x = angle)) + facet_wrap("activity")
+#' ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+#'   geom_density(aes(x = step)) + facet_wrap("activity")
 #'
 #'
 simulate_trajectory_FR <- function(initial_position, 

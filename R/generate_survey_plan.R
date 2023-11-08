@@ -16,25 +16,25 @@
 #' @param buffer_width numeric. Width of the buffer on each side of the segments or transects. 
 #'
 #' @importFrom raster spLines extent
-#' @importFrom sf st_as_sf st_cast as_Spatial st_length, st_buffer
+#' @importFrom sf st_as_sf st_cast as_Spatial st_length st_buffer
 #' @importFrom qdapTools id
 #' @importFrom purrr reduce
 #' @importFrom magrittr %>%
 #'
 #' @return A named list. 
 #' @export
+#' @family survey simulation functions 
 #'
 #' @examples
-#' surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-#'                              start_x = 10, end_x = 80, start_y = 10, end_y = 80,
-#'                              space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
-#'                              buffer = TRUE, buffer_width = 0.2
-#'                              )
+#' surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+#'                              start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+#'                              space_out_factor = 2, segmentize = TRUE, seg_length = 1,
+#'                              buffer = TRUE, buffer_width = 0.2)
 #' par(mfrow = c(2,2), mar = c(2.5,2.5,4,0.5))
-#' raster::plot(surv$bbx, axes = T, main = "bounding box")
-#' plot(sf::st_geometry(surv$transects), axes = T, main = "transects")
-#' plot(sf::st_geometry(surv$segments), axes = T, main = "segments")
-#' plot(sf::st_geometry(surv$buffered_segments), axes = T, main = "buffered seg")
+#' raster::plot(surv$bbx, axes = TRUE, main = "bounding box")
+#' plot(sf::st_geometry(surv$transects), axes = TRUE, main = "transects")
+#' plot(sf::st_geometry(surv$segments), axes = TRUE, main = "segments")
+#' plot(sf::st_geometry(surv$buffered_segments), axes = TRUE, main = "buffered seg")
 generate_survey_plan <- function(bbx_xmin, bbx_xmax, bbx_ymin, bbx_ymax,
                                  start_x, end_x, start_y, end_y, space_out_factor,
                                  type = "horizontal", 

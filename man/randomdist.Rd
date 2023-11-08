@@ -18,3 +18,11 @@ n random step lengths
 \description{
 Return random step lengths
 }
+\seealso{
+Other individual movement functions: 
+\code{\link{potential_position_func}()},
+\code{\link{randomdir}()},
+\code{\link{simulate_trajectory_CPF}()},
+\code{\link{simulate_trajectory_FR}()}
+}
+\concept{individual movement functions}

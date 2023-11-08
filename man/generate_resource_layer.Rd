@@ -44,3 +44,8 @@ cdt2 <- generate_env_layer(grid = grid, n = 3)$dataframe |> dplyr::rename(lon = 
 str(generate_resource_layer(env_layers = cdt2, coordinate_fields = c("lon", "lat"),
                             beta = c(2, -1.5, 3)) )
 }
+\seealso{
+Other environment simulation functions: 
+\code{\link{generate_env_layer}()}
+}
+\concept{environment simulation functions}

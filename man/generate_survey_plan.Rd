@@ -50,14 +50,20 @@ A named list.
 This function builds a simple transect design layout, consisting of parallel transects covering a given area in the virtual environment, spaced out by a given distance. The layout can either be horizontal (the default) or vertical. The transects can be segmentized to a given length, and transects or segments can be buffered.
 }
 \examples{
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
-                             buffer = TRUE, buffer_width = 0.2
-                             )
+surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
+                             buffer = TRUE, buffer_width = 0.2)
 par(mfrow = c(2,2), mar = c(2.5,2.5,4,0.5))
-raster::plot(surv$bbx, axes = T, main = "bounding box")
-plot(sf::st_geometry(surv$transects), axes = T, main = "transects")
-plot(sf::st_geometry(surv$segments), axes = T, main = "segments")
-plot(sf::st_geometry(surv$buffered_segments), axes = T, main = "buffered seg")
+raster::plot(surv$bbx, axes = TRUE, main = "bounding box")
+plot(sf::st_geometry(surv$transects), axes = TRUE, main = "transects")
+plot(sf::st_geometry(surv$segments), axes = TRUE, main = "segments")
+plot(sf::st_geometry(surv$buffered_segments), axes = TRUE, main = "buffered seg")
 }
+\seealso{
+Other survey simulation functions: 
+\code{\link{assign_flight_plan}()},
+\code{\link{detection_process}()},
+\code{\link{launch_survey_on_movement}()}
+}
+\concept{survey simulation functions}

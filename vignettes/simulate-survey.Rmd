@@ -40,16 +40,15 @@ The \code{\link{generate_survey_plan}} function presented here provide facilitie
 
 
 ```{r examples-generate_survey_plan}
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
-                             buffer = TRUE, buffer_width = 0.2
-                             )
+surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
+                             buffer = TRUE, buffer_width = 0.2)
 par(mfrow = c(2,2), mar = c(2.5,2.5,4,0.5))
-raster::plot(surv$bbx, axes = T, main = "bounding box")
-plot(sf::st_geometry(surv$transects), axes = T, main = "transects")
-plot(sf::st_geometry(surv$segments), axes = T, main = "segments")
-plot(sf::st_geometry(surv$buffered_segments), axes = T, main = "buffered seg")
+raster::plot(surv$bbx, axes = TRUE, main = "bounding box")
+plot(sf::st_geometry(surv$transects), axes = TRUE, main = "transects")
+plot(sf::st_geometry(surv$segments), axes = TRUE, main = "segments")
+plot(sf::st_geometry(surv$buffered_segments), axes = TRUE, main = "buffered seg")
 ```
 
 # 2. Assign a flight plan to the survey
@@ -58,30 +57,22 @@ Before launching a survey, a flight plan must be set up, that is the order by wh
 
 
 ```{r examples-assign_flight_plan}
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
                              buffer = TRUE, buffer_width = 0.2
-                             )
+)
 
-# Here, set up a flight plan where the first transect is flown in a given 
-# direction, the second in the other direction etc, so that the aircraft 
-# does not need to go all the way to the other side of the survey area 
-# to start a new transect. The intransect.gap.duration is thus set to 1 minute, 
-# a the flight speed to 160 km/h (the classical speed for aerial surveys). 
-# in that case, the survey duration for a single segment is 22.5 seconds. 
-flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
-                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
 
 # assign the time periods to each segment
 flight_plan <- assign_flight_plan(
-    sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
-    col_trans_id = "transect",
-    flight_day = "2022-02-08", 
-    survey_start_hour = "06:00:00",
-    flight_speed = 160,
-    intertransect_gap_duration = 60
+  sf_segments = surv$buffered_segments,
+  flight_id = c(1:468),
+  col_trans_id = "transect",
+  flight_day = "2022-08-01",
+  survey_start_hour = "06:00:00",
+  flight_speed = 160,
+  intertransect_gap_duration = 60*30
 )
 
 # plot to check everything is ok
@@ -108,23 +99,21 @@ The \code{\link{detection_process}} function can be used to simulate the detecti
 ```{r examples-detection_process}
 grid <- create_grid()
 env <- generate_env_layer(grid = grid)
-sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
-                             buffer = TRUE, buffer_width = 0.2
-                             )
+sp <- suppressWarnings(simul_spat(ref_map = env$rasters$sim1,
+                 N = 1000, 
+                 n_sim = 1, 
+                 return_wgs_coordinates = FALSE))
 
 pts <- detection_process(pts = sp, 
-                         transects = surv$segments, 
+                         transects = example_data$survey$segments, 
                          strip_transect = TRUE, 
                          sigma = 0.2, 
                          virtual_space = TRUE,
                          seg_id_col = "seg_id")
 plot(sp$x, sp$y)
-# plot(sf::st_geometry(surv$buffered.segments), border = "pink", color = NA, add = T)
-plot(sf::st_geometry(surv$segments), col = "red", add = T)
-points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), pch = 20, col = "blue")
+plot(sf::st_geometry(example_data$survey$segments), col = "red", add = TRUE)
+points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), 
+       pch = 20, col = "blue")
 ```
 
 # 4. Simulate survey on moving individuals
@@ -140,24 +129,28 @@ Note: there must not be a too large difference between the size of segments and 
 
 ```{r examples-launch_survey_on_movement}
 # an example with a small number of individuals
-survey <- launch_survey_on_movement(
+survey <- suppressMessages(launch_survey_on_movement(
   survey_data_buffered = example_data$flight_plan,
   survey_data_linear = example_data$survey$segments,
   traj_data = example_data$mvmt_data,
   line_transect = TRUE, detection_function = "hn",
   sigma = 0.2
-)
+))
 
 # look at the number of sightings
 summary(survey$effort_table$N_ind_tot)
 
-plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), xlab = "distance to the track line", ylab = "detection probability")
+plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), 
+     xlab = "distance to the track line", ylab = "detection probability")
 
 # all sightings are in a few segments
 library(ggplot2)
 ggplot(survey$effort_table) +
-  geom_sf(data = survey$obs_table, aes(shape = as.factor(detected)), size = 2) +
-  geom_sf(aes(fill = N_ind_tot)) + viridis::scale_fill_viridis(limits = c(1,10), na.value = NA, alpha = 0.5)
+  geom_sf(data = survey$obs_table, 
+          aes(shape = as.factor(detected)), size = 2) +
+  geom_sf(aes(fill = N_ind_tot)) + 
+  viridis::scale_fill_viridis(limits = c(1,10), 
+                              na.value = NA, alpha = 0.5)
 
 ```
 

@@ -24,8 +24,8 @@ pkgload::load_all(export_all = FALSE)
 #' @param coords 
 #' @param from 
 #' @param to 
-#'
-#'
+#' @export
+#' @rdname segmentize
 CreateSegment <- function(coords, from, to) {
   distance <- 0
   coordsOut <- c()
@@ -54,11 +54,12 @@ CreateSegment <- function(coords, from, to) {
   return(coordsOut)
 }
 
-#' Author: Auriane Virgili
-#'
+#' 
 #' @param coords 
 #' @param length 
 #' @param n.parts 
+#' @export
+#' @rdname segmentize
 #'
 CreateSegments <- function(coords, length = 0, n.parts = 0) {
   stopifnot((length > 0 || n.parts > 0))
@@ -85,6 +86,9 @@ CreateSegments <- function(coords, length = 0, n.parts = 0) {
   return(newlines)
 }
 
+#' @param lst 
+#' @export
+#' @rdname segmentize
 MergeLast <- function(lst) {
   l <- length(lst)
   lst[[l - 1]] <- rbind(lst[[l - 1]], lst[[l]])
@@ -92,8 +96,6 @@ MergeLast <- function(lst) {
   return(lst)
 }
 
-#' Author: Auriane Virgili
-#'
 #' @param sl a spatial line object
 #' @param length length to segmentize
 #' @param n.parts number of parts to cut the transect into
@@ -102,7 +104,8 @@ MergeLast <- function(lst) {
 #' @importFrom sp Lines
 #' @importFrom sp Line
 #' @importFrom sp SpatialLines
-#'
+#' @export
+#' @rdname segmentize
 SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE) {
   stopifnot((length > 0 || n.parts > 0))
   id <- 0
@@ -127,13 +130,14 @@ SegmentSpatialLines <- function(sl, length = 0, n.parts = 0, merge.last = FALSE)
   return(sp::SpatialLines(newlines))
 }
 
-#' Author: Auriane Virgili
-#'
 #' @param segments a sf object
 #'
 #' @importFrom sf st_length st_union
 #' 
 #' @return a sf object
+#' @export
+#' @rdname segmentize
+#' 
 Merge <- function(segments) {
   
   n <- as.numeric(nrow(segments))
@@ -171,12 +175,14 @@ Merge <- function(segments) {
 ```{r function-detection_functions}
 #' Half-normal detection function
 #' 
-#' 
+#' @export
+#' @rdname detection_functions
 detfunc_hn <- function(x, sigma) {return(exp(-((x/sigma)^2)/2))}
 
 #' Hazard rate detection function
 #' 
-#' 
+#' @export
+#' @rdname detection_functions
 detfunc_hr <- function(x, sigma, b) {return( 1-exp(-(x/sigma)^(-b)) )}
 
 ```
@@ -208,13 +214,14 @@ The \code{\link{generate_survey_plan}} function presented here provide facilitie
 #' @param buffer_width numeric. Width of the buffer on each side of the segments or transects. 
 #'
 #' @importFrom raster spLines extent
-#' @importFrom sf st_as_sf st_cast as_Spatial st_length, st_buffer
+#' @importFrom sf st_as_sf st_cast as_Spatial st_length st_buffer
 #' @importFrom qdapTools id
 #' @importFrom purrr reduce
 #' @importFrom magrittr %>%
 #'
 #' @return A named list. 
 #' @export
+#' @family survey simulation functions 
 #'
 #' @examples
 generate_survey_plan <- function(bbx_xmin, bbx_xmax, bbx_ymin, bbx_ymax,
@@ -312,16 +319,15 @@ generate_survey_plan <- function(bbx_xmin, bbx_xmax, bbx_ymin, bbx_ymax,
 ```
 
 ```{r examples-generate_survey_plan}
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
-                             buffer = TRUE, buffer_width = 0.2
-                             )
+surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
+                             buffer = TRUE, buffer_width = 0.2)
 par(mfrow = c(2,2), mar = c(2.5,2.5,4,0.5))
-raster::plot(surv$bbx, axes = T, main = "bounding box")
-plot(sf::st_geometry(surv$transects), axes = T, main = "transects")
-plot(sf::st_geometry(surv$segments), axes = T, main = "segments")
-plot(sf::st_geometry(surv$buffered_segments), axes = T, main = "buffered seg")
+raster::plot(surv$bbx, axes = TRUE, main = "bounding box")
+plot(sf::st_geometry(surv$transects), axes = TRUE, main = "transects")
+plot(sf::st_geometry(surv$segments), axes = TRUE, main = "segments")
+plot(sf::st_geometry(surv$buffered_segments), axes = TRUE, main = "buffered seg")
 ```
 
 ```{r tests-generate_survey_plan}
@@ -396,6 +402,7 @@ Before launching a survey, a flight plan must be set up, that is the order by wh
 #'
 #' @return a sf table with four additional columns (transect_id, flight_id, start_time and end_time) informing the period over which each segment is surveyed
 #' @export
+#' @family survey simulation functions 
 #'
 #' @examples
 assign_flight_plan <- function(
@@ -477,30 +484,22 @@ assign_flight_plan <- function(
 ```
 
 ```{r examples-assign_flight_plan}
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
                              buffer = TRUE, buffer_width = 0.2
-                             )
+)
 
-# Here, set up a flight plan where the first transect is flown in a given 
-# direction, the second in the other direction etc, so that the aircraft 
-# does not need to go all the way to the other side of the survey area 
-# to start a new transect. The intransect.gap.duration is thus set to 1 minute, 
-# a the flight speed to 160 km/h (the classical speed for aerial surveys). 
-# in that case, the survey duration for a single segment is 22.5 seconds. 
-flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
-                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
 
 # assign the time periods to each segment
 flight_plan <- assign_flight_plan(
-    sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
-    col_trans_id = "transect",
-    flight_day = "2022-02-08", 
-    survey_start_hour = "06:00:00",
-    flight_speed = 160,
-    intertransect_gap_duration = 60
+  sf_segments = surv$buffered_segments,
+  flight_id = c(1:468),
+  col_trans_id = "transect",
+  flight_day = "2022-08-01",
+  survey_start_hour = "06:00:00",
+  flight_speed = 160,
+  intertransect_gap_duration = 60*30
 )
 
 # plot to check everything is ok
@@ -521,19 +520,16 @@ ggplot(flight_plan) +
 ```{r tests-assign_flight_plan}
 test_that("assign_flight_plan works", {
   
-  surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 5, end_x = 85, start_y = 5, end_y = 85,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 1, 
+  surv <- generate_survey_plan(bbx_xmin = 30, bbx_xmax = 65, bbx_ymin = 30, bbx_ymax = 65,
+                             start_x = 34, end_x = 60, start_y = 34, end_y = 68,
+                             space_out_factor = 2, segmentize = TRUE, seg_length = 1,
                              buffer = TRUE, buffer_width = 0.2
-                             )
-
-  flight_id <- c(1:80, 160:81, 161:240, 320:241, 321:400, 480:401, 481:560, 640:561, 641:720, 800:721, 801:880, 960:881, 961:1040,
-                   1120:1041, 1121:1200, 1280:1201, 1281:1360, 1440:1361, 1441:1520, 1600:1521, 1601:1680)
+  )
 
   expect_error(
     object = assign_flight_plan(
     sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
+    flight_id =  c(1:468),
     col_trans_id = "toto",
     flight_day = "2022-02-08", 
     survey_start_hour = "06:00:00",
@@ -545,7 +541,7 @@ test_that("assign_flight_plan works", {
   expect_error(
     object = assign_flight_plan(
     sf_segments = surv$buffered_segments,
-    flight_id = flight_id,
+    flight_id =  c(1:468),
     col_trans_id = "transect",
     flight_day = 2022, 
     survey_start_hour = "06:00:00",
@@ -557,7 +553,7 @@ test_that("assign_flight_plan works", {
   expect_error(
     object = assign_flight_plan(
     sf_segments = surv$segments,
-    flight_id = flight_id,
+    flight_id =  c(1:468),
     col_trans_id = "transect",
     flight_day = "2022-02-08", 
     survey_start_hour = "06:00:00",
@@ -582,7 +578,7 @@ The \code{\link{detection_process}} function can be used to simulate the detecti
 #' This function can be used to simulate the detection process when the surveyed individuals are fixed on the geographical space, for example when the species distribution is generated by \code{\link{simul_spat}}. If strip_transect is emulated, an individual is considered detected if its distance to the track line is lower than the width (provided with sigma). If line-transect is emulated, a half-normal detection function is built using the given sigma as effective strip half-width. The user must define if the simulation is done in a virtual space or not (if not, the distances must be provided in km and pts and transects objects must be projected). 
 #'
 #' @param pts sf object (points), the position of individuals to be surveyed
-#' @param transects sf object (lines), survey layout with transects or segments
+#' @param transects sf object (lines), survey layout with transects or segments (not buffered)
 #' @param strip_transect Boolean. Should strip-transect methodology be used? Default to TRUE
 #' @param sigma numeric, is strip_transect is TRUE, the width of the strip width; if strip-transect is FALSE, the effective strip half-width (in km, if in real space)
 #' @param seg_id_col character, the name of the column in transects where the ids are stored
@@ -590,12 +586,15 @@ The \code{\link{detection_process}} function can be used to simulate the detecti
 #'
 #' @importFrom sf st_distance st_drop_geometry
 #' @importFrom glue glue
-#' @importFrom stats rbinom dnorm
+#' @importFrom stats rbinom dnorm pnorm
+#' @importFrom methods as
 #'
 #' @return the pts dataframe (sf object) with additional columns: distance, distance_km (if in real space), seg_id (the closest transect or segment from the individual) and detected (1 if the individual is detected, 0 otherwise)
 #' @export
-#'
+#' @family survey simulation functions 
+#' @seealso \code{\link{simul_spat}} \code{\link{generate_survey_plan}}
 #' @examples
+#' 
 detection_process <- function(pts, 
                               transects, 
                               strip_transect = TRUE,
@@ -644,7 +643,7 @@ detection_process <- function(pts,
       message(glue::glue("Line-transect is used with a effective half width of {sigma}"))
       # esw <- (pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
       proba <- exp(- (pts$distance)^2 / (2 * sigma * sigma))
-      pts$detected <- rbinom(nrow(pts), size = 1, prob = proba)
+      pts$detected <- stats::rbinom(nrow(pts), size = 1, prob = proba)
     }
     return(pts)
   } else {
@@ -663,9 +662,9 @@ detection_process <- function(pts,
       pts$detected <- ifelse(pts$distance_km <= esw, 1, 0)
     } else {
       message(glue::glue("Line-transect is used with a effective half width of {sigma}"))
-      esw <- (pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
+      esw <- (stats::pnorm(+Inf, 0, sigma) - 0.5) / dnorm(0, 0, sigma)
       proba <- exp(- (pts$distance_km)^2 / (2 * sigma * sigma))
-      pts$detected <- rbinom(nrow(pts), size = 1, prob = proba)
+      pts$detected <- stats::rbinom(nrow(pts), size = 1, prob = proba)
     }
     return(pts)
   }
@@ -675,23 +674,21 @@ detection_process <- function(pts,
 ```{r examples-detection_process}
 grid <- create_grid()
 env <- generate_env_layer(grid = grid)
-sp <- simul_spat(ref_map = env$rasters$sim1,N = 1000, n_sim = 1, return_wgs_coordinates = F)
-surv <- generate_survey_plan(bbx_xmin = 5, bbx_xmax = 85, bbx_ymin = 5, bbx_ymax = 85,
-                             start_x = 10, end_x = 80, start_y = 10, end_y = 80,
-                             space_out_factor = 4, segmentize = TRUE, seg_length = 2, 
-                             buffer = TRUE, buffer_width = 0.2
-                             )
+sp <- suppressWarnings(simul_spat(ref_map = env$rasters$sim1,
+                 N = 1000, 
+                 n_sim = 1, 
+                 return_wgs_coordinates = FALSE))
 
 pts <- detection_process(pts = sp, 
-                         transects = surv$segments, 
+                         transects = example_data$survey$segments, 
                          strip_transect = TRUE, 
                          sigma = 0.2, 
                          virtual_space = TRUE,
                          seg_id_col = "seg_id")
 plot(sp$x, sp$y)
-# plot(sf::st_geometry(surv$buffered.segments), border = "pink", color = NA, add = T)
-plot(sf::st_geometry(surv$segments), col = "red", add = T)
-points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), pch = 20, col = "blue")
+plot(sf::st_geometry(example_data$survey$segments), col = "red", add = TRUE)
+points(sf::st_drop_geometry(pts[which(pts$detected == 1), c("x", "y")]), 
+       pch = 20, col = "blue")
 ```
 
 ```{r tests-detection_process}
@@ -766,10 +763,13 @@ Note: there must not be a too large difference between the size of segments and 
 #' @importFrom glue glue
 #' @importFrom stats rbinom
 #'
-#' @return A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column (N_ind_detected) summarising the number of individuals detected based on distance to the track line. 
+#' @return A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column ("N_ind_detected") summarising the number of individuals detected based on distance to the track line. 
 #' 
 #' @export
-#'
+#' 
+#' @family survey simulation functions 
+#' @seealso \code{\link{simulate_trajectory_CPF()}} \code{\link{simulate_trajectory_FR()}}
+#' 
 #' @examples
 launch_survey_on_movement <- function(
     survey_data_buffered,
@@ -876,7 +876,7 @@ launch_survey_on_movement <- function(
     sf::st_as_sf(coords = c("centroid_x", "centroid_y"))  
   
   
-  if(line_transect == T){
+  if(line_transect == TRUE){
     message("Applying detection function")
     # compute distance to the track line and line-transect setting
     obs_table$dist_seg <- lapply(1:nrow(obs_table), function(i){
@@ -913,24 +913,28 @@ launch_survey_on_movement <- function(
 
 ```{r examples-launch_survey_on_movement}
 # an example with a small number of individuals
-survey <- launch_survey_on_movement(
+survey <- suppressMessages(launch_survey_on_movement(
   survey_data_buffered = example_data$flight_plan,
   survey_data_linear = example_data$survey$segments,
   traj_data = example_data$mvmt_data,
   line_transect = TRUE, detection_function = "hn",
   sigma = 0.2
-)
+))
 
 # look at the number of sightings
 summary(survey$effort_table$N_ind_tot)
 
-plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), xlab = "distance to the track line", ylab = "detection probability")
+plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), 
+     xlab = "distance to the track line", ylab = "detection probability")
 
 # all sightings are in a few segments
 library(ggplot2)
 ggplot(survey$effort_table) +
-  geom_sf(data = survey$obs_table, aes(shape = as.factor(detected)), size = 2) +
-  geom_sf(aes(fill = N_ind_tot)) + viridis::scale_fill_viridis(limits = c(1,10), na.value = NA, alpha = 0.5)
+  geom_sf(data = survey$obs_table, 
+          aes(shape = as.factor(detected)), size = 2) +
+  geom_sf(aes(fill = N_ind_tot)) + 
+  viridis::scale_fill_viridis(limits = c(1,10), 
+                              na.value = NA, alpha = 0.5)
 
 ```
 
@@ -976,6 +980,8 @@ test_that("launch_survey_on_movement works", {
 ```{r development-inflate, eval=FALSE}
 # Run but keep eval=FALSE to avoid infinite loop
 # Execute in the console directly
-fusen::inflate(flat_file = "dev/flat_simulate_survey.Rmd", vignette_name = "Simulate survey")
+fusen::inflate(flat_file = "dev/flat_simulate_survey.Rmd", 
+               vignette_name = "Simulate survey", 
+               overwrite = T, check = F)
 ```
 

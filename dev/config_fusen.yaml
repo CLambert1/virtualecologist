@@ -14,9 +14,9 @@ flat_simulate_env.Rmd:
     flat_file: dev/flat_simulate_env.Rmd
     vignette_name: Simulate virtual environment
     open_vignette: true
-    check: true
+    check: false
     document: true
-    overwrite: ask
+    overwrite: 'yes'
 flat_simulate_mvmt.Rmd:
   path: dev/flat_simulate_mvmt.Rmd
   state: active
@@ -34,9 +34,9 @@ flat_simulate_mvmt.Rmd:
     flat_file: dev/flat_simulate_mvmt.Rmd
     vignette_name: Simulate individual movements
     open_vignette: true
-    check: true
+    check: false
     document: true
-    overwrite: ask
+    overwrite: 'yes'
 flat_simulate_sp.Rmd:
   path: dev/flat_simulate_sp.Rmd
   state: active
@@ -51,16 +51,17 @@ flat_simulate_sp.Rmd:
     flat_file: dev/flat_simulate_sp.Rmd
     vignette_name: Simulate virtual species
     open_vignette: true
-    check: true
+    check: false
     document: true
-    overwrite: ask
+    overwrite: 'yes'
 flat_simulate_survey.Rmd:
   path: dev/flat_simulate_survey.Rmd
   state: active
   R:
   - R/assign_flight_plan.R
-  - R/createsegment.R
+  - R/segmentize.R
   - R/detection_process.R
+  - R/detection_functions.R
   - R/generate_survey_plan.R
   - R/launch_survey_on_movement.R
   tests:
@@ -73,6 +74,21 @@ flat_simulate_survey.Rmd:
     flat_file: dev/flat_simulate_survey.Rmd
     vignette_name: Simulate survey
     open_vignette: true
-    check: true
+    check: false
     document: true
-    overwrite: ask
+    overwrite: 'yes'
+flat_utils.Rmd:
+  path: dev/flat_utils.Rmd
+  state: active
+  R:
+  - R/.R
+  - R/launch_help.R
+  tests: tests/testthat/test-launch_help.R
+  vignettes: vignettes/utils.Rmd
+  inflate:
+    flat_file: dev/flat_utils.Rmd
+    vignette_name: Utils
+    open_vignette: true
+    check: false
+    document: true
+    overwrite: 'yes'

@@ -59,13 +59,11 @@ ggplot(full_pop)+
 
 ## put everything in a list
 example_data <- list(
-  env_resource_layers = env,
+  env_resource_layers = env$dataframe, # doit enlever le SpatRaster sinon ça bug à la réouverture puise que pointe vers un fichier temporaire inexistante
   mvmt_data = full_pop,
   survey = surv,
   flight_plan = flight_plan
 )
-
-
 
 ## Copy to data
 # create the rda

@@ -9,16 +9,11 @@ test_that("simulate_trajectory works", {
   library(lubridate)
   colony_location <- data.frame(Lon = 50, Lat = 50)
   cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-  daylength <- insol::daylength(long = colony_location$Lon, 
-                              lat = colony_location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 
   expect_true(
     is.data.frame(simulate_trajectory_FR(initial_position = colony_location, 
                     resource_layer = cdt$rasters, 
-                    starting_hour = ymd_hms(sunrise), # departs at sunrise
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -33,7 +28,7 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
   
   expect_error(simulate_trajectory_FR(initial_position = colony_location, 
                     resource_layer = colony_location, 
-                    starting_hour = ymd_hms(sunrise), 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -48,7 +43,7 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
   
   expect_error(simulate_trajectory_FR(initial_position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
                         resource_layer = cdt$rasters, 
-                        starting_hour = ymd_hms(sunrise), 
+                        starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                         starting_bearing = c(90,10), 
                         starting_step = c(4.5, 3),
                         travel_bearing = c(0, 20), 

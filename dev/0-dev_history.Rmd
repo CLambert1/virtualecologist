@@ -101,7 +101,7 @@ usethis::use_package_doc()
 # update dependancies etc
 attachment::att_amend_desc()
 
-# create z vignette for the whole package
+# create a vignette for the whole package
 usethis::use_vignette("simtools")
 
 
@@ -159,7 +159,7 @@ covr::report()
 usethis::use_pkgdown()
 
 # reconstruit le site en entier
-pkgdown::build_site(override = list(destination = "inst/site")) # faire dans inst/ plutot que à la racine
+pkgdown::build_site(override = list(destination = "inst/site")) # faire dans inst/ plutot que à la racine, pour que le site soit installé en local avec le package et donc accessible sans internet
 # custom appearence in _pkgdown.yml (racine du package)
 # choose bootswatch name from : https://bootswatch.com/
 # see https://pkgdown.r-lib.org/articles/customise.html for customisation options
@@ -181,5 +181,13 @@ devtools::build(vignettes = TRUE)
 # usethis::create_github_token()
 # gitcreds::gitcreds_set()
 fusen::init_share_on_github()
+```
+
+# check l'installation du package
+
+```{r}
+devtools::build(vignettes = TRUE) # construit le package au format tar.gz
+remotes::install_local(path = "~/simtools_0.0.0.9000.tar.gz") # installe le package depuis le format tar.gz
+simtools::launch_help()
 ```
 

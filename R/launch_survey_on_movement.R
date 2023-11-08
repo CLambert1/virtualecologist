@@ -23,30 +23,37 @@
 #' @importFrom glue glue
 #' @importFrom stats rbinom
 #'
-#' @return A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column (N_ind_detected) summarising the number of individuals detected based on distance to the track line. 
+#' @return A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column ("N_ind_detected") summarising the number of individuals detected based on distance to the track line. 
 #' 
 #' @export
-#'
+#' 
+#' @family survey simulation functions 
+#' @seealso \code{\link{simulate_trajectory_CPF()}} \code{\link{simulate_trajectory_FR()}}
+#' 
 #' @examples
 #' # an example with a small number of individuals
-#' survey <- launch_survey_on_movement(
+#' survey <- suppressMessages(launch_survey_on_movement(
 #'   survey_data_buffered = example_data$flight_plan,
 #'   survey_data_linear = example_data$survey$segments,
 #'   traj_data = example_data$mvmt_data,
 #'   line_transect = TRUE, detection_function = "hn",
 #'   sigma = 0.2
-#' )
+#' ))
 #'
 #' # look at the number of sightings
 #' summary(survey$effort_table$N_ind_tot)
 #'
-#' plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), xlab = "distance to the track line", ylab = "detection probability")
+#' plot(sf::st_drop_geometry(survey$obs_table[, c("dist_seg", "prob_dist")]), 
+#'      xlab = "distance to the track line", ylab = "detection probability")
 #'
 #' # all sightings are in a few segments
 #' library(ggplot2)
 #' ggplot(survey$effort_table) +
-#'   geom_sf(data = survey$obs_table, aes(shape = as.factor(detected)), size = 2) +
-#'   geom_sf(aes(fill = N_ind_tot)) + viridis::scale_fill_viridis(limits = c(1,10), na.value = NA, alpha = 0.5)
+#'   geom_sf(data = survey$obs_table, 
+#'           aes(shape = as.factor(detected)), size = 2) +
+#'   geom_sf(aes(fill = N_ind_tot)) + 
+#'   viridis::scale_fill_viridis(limits = c(1,10), 
+#'                               na.value = NA, alpha = 0.5)
 #'
 launch_survey_on_movement <- function(
     survey_data_buffered,
@@ -153,7 +160,7 @@ launch_survey_on_movement <- function(
     sf::st_as_sf(coords = c("centroid_x", "centroid_y"))  
   
   
-  if(line_transect == T){
+  if(line_transect == TRUE){
     message("Applying detection function")
     # compute distance to the track line and line-transect setting
     obs_table$dist_seg <- lapply(1:nrow(obs_table), function(i){

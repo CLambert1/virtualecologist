@@ -12,6 +12,8 @@
 #' @return Returns a data frame with the simulated environmental values, as well as SpatRast is return_rasters = TRUE
 #' @export
 #' 
+#' @family environment simulation functions
+#' 
 #' @importFrom gstat gstat vgm
 #' @importFrom terra rast
 #' @importFrom stats predict

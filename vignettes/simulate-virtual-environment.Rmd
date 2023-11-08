@@ -39,6 +39,7 @@ grid <- create_grid()
 
   
 
+
 # Generating environmental layers
 
 The \code{\link{generate_env_layer}} function creates several environmental layers using Gaussian simulation from the grid locations. The number of layers generated is set by n. The generated layers can be normalised, and be returned either only as data frame or both in data frame and raster formats (SpatRast). 

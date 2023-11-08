@@ -19,6 +19,7 @@
 #' @importFrom tidyr drop_na
 #' @importFrom spatstat.geom as.im
 #' 
+#' @seealso \code{\link{generate_resource_layer()}} \code{\link{generate_env_layers()}}
 #' 
 #' @return Returns an sf object
 #' @export

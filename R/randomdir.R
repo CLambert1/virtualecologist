@@ -8,6 +8,7 @@
 #'
 #' @return n random angles
 #' @export
+#' @family individual movement functions
 #'
 randomdir <- function(n,mu,kappa){
   out <- circular::rwrappednormal(10, mu = circular::circular(mu, units = "degrees", 
@@ -24,6 +25,7 @@ randomdir <- function(n,mu,kappa){
 #'
 #' @return n random step lengths
 #' @export
+#' @family individual movement functions
 #'
 randomdist <- function(n, shape, rate){
   out <- stats::rgamma(n, shape, rate)

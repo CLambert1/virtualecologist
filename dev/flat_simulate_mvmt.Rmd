@@ -23,6 +23,7 @@ pkgload::load_all(export_all = FALSE)
 #'
 #' @return n random angles
 #' @export
+#' @family individual movement functions
 #'
 randomdir <- function(n,mu,kappa){
   out <- circular::rwrappednormal(10, mu = circular::circular(mu, units = "degrees", 
@@ -39,6 +40,7 @@ randomdir <- function(n,mu,kappa){
 #'
 #' @return n random step lengths
 #' @export
+#' @family individual movement functions
 #'
 randomdist <- function(n, shape, rate){
   out <- stats::rgamma(n, shape, rate)
@@ -48,10 +50,12 @@ randomdist <- function(n, shape, rate){
 
 # Define potential next positions
 
-\code{\link{potential_position_func}} generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each positions, the value of env_rast is retrieved as well as the distance from the colony location. 
+\code{\link{potential_position_func}} generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
 
 ```{r function-potential_position_func}
 #' Identify potential next positions
+#'
+#' The function generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
 #'
 #' @param n Numeric, the number of potential positions to generate
 #' @param bearing Numeric vector, mu and kappa to be passed on randomdir
@@ -65,6 +69,8 @@ randomdist <- function(n, shape, rate){
 #' 
 #' @return A data.frame with the n potential positions from the point of origin, informed with the value of the provided environmental layer corresponding to each as well as the distance from the colony. 
 #' @export
+#'
+#' @family individual movement functions
 #'
 #' @examples
 potential_position_func <- function(n, bearing, step, from, colony_location, resource_layer){
@@ -141,7 +147,7 @@ test_that("potential_position_func works", {
 
 # Simulate the trajectory of a single central-place forager
 
-\code{\link{simulate_trajectory_CPF}} simulates a full foraging trajectory of an individual departing from its colony. The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max_dist) or when an hour before sunset. The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). 
+\code{\link{simulate_trajectory_CPF}} simulates a full foraging trajectory of an individual departing from its colony. The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max_dist) or after a given time period (max_duration). The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). 
 The user can define the step duration, that is the time interval at which the positions are sampled.  
 
 For each position, ten potential subsequent positions are randomly sampled using \code{\link{potential_position_func()}}, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package. 
@@ -152,6 +158,13 @@ When individuals reaches the threshold distance to colony (max_dist), or the tri
 
 ```{r function-simulate_trajectory_CPF}
 #' Simulate individual trajectory
+#'
+#' Simulate the trajectory of a central-place forager over a given time period. 
+#' 
+#' @details The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max_dist) or after a given time period (max_duration). The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). The user can define the step duration, that is the time  interval at which the positions are sampled. 
+#'    For each position, ten potential subsequent positions are randomly sampled using \code{\link{potential_position_func()}}, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package. 
+#'    The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, subsequent positions are randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity_threshold), the individual switches to foraging movements; if not, the individual continues travelling.
+#'    When individuals reaches the threshold distance to colony (max_dist), or the trip duration exceeds the given duration (max_duration), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
 #'
 #' @param initial_position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields), considered to be the colony location
 #' @param resource_layer SpatRaster of the resource layer
@@ -177,6 +190,8 @@ When individuals reaches the threshold distance to colony (max_dist), or the tri
 #' 
 #' @return a data.frame
 #' @export
+#' 
+#' @family individual movement functions
 #'
 #' @examples
 simulate_trajectory_CPF <- function(initial_position, 
@@ -441,16 +456,11 @@ library(lubridate)
 library(terra)
 colony_location <- data.frame(Lon = 20, Lat = 20)
 cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-daylength <- insol::daylength(long = colony_location$Lon, 
-                              lat = colony_location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
-    
+ 
 # launch a travel for a duration of 12h
 single_traj <- simulate_trajectory_CPF(initial_position = colony_location, 
                     resource_layer = cdt$rasters, 
-                    starting_hour = ymd_hms(sunrise), # departs at sunrise
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -465,7 +475,7 @@ single_traj <- simulate_trajectory_CPF(initial_position = colony_location,
                     max_duration = 720)
 
 # view the trajectory
-ggplot(single.traj) +
+ggplot(single_traj) +
   geom_spatraster(data = cdt$rasters) + 
   geom_point(aes(x = Lon, y = Lat, color = activity)) +
   geom_point(data = colony_location, aes(x = Lon, y = Lat), col = "red") +
@@ -473,8 +483,10 @@ ggplot(single.traj) +
 
 # look at the density distribution of distance to colony and movement parameters
 ggplot(single_traj) + geom_density(aes(x = dist_col))
-ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = angle)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = step)) + facet_wrap("activity")
 
 ```
   
@@ -488,16 +500,11 @@ test_that("simulate_trajectory works", {
   library(lubridate)
   colony_location <- data.frame(Lon = 50, Lat = 50)
   cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-  daylength <- insol::daylength(long = colony_location$Lon, 
-                              lat = colony_location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 
   expect_true(
     is.data.frame(simulate_trajectory_CPF(initial_position = colony_location, 
                     resource_layer = cdt$rasters, 
-                    starting_hour = ymd_hms(sunrise), 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -513,7 +520,7 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
   
     expect_error(simulate_trajectory_CPF(initial_position = colony_location, 
                     resource_layer = colony_location, 
-                    starting_hour = ymd_hms(sunrise), 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -529,7 +536,7 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
     
         expect_error(simulate_trajectory_CPF(initial_position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
                         resource_layer = cdt$rasters, 
-                        starting_hour = ymd_hms(sunrise), 
+                        starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                         starting_bearing = c(90,10), 
                         starting_step = c(4.5, 3),
                         travel_bearing = c(0, 20), 
@@ -548,10 +555,12 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
 
 # Simulate the trajectory of a non-central place forager
 
-`simulate_trajectory_FR` does the same as above, but the individual is not restrained around its colony and does not perform homing bout. Should add a condition on the time spent aorund a same area. 
+`simulate_trajectory_FR` does the same as above, but the individual is not restrained around its colony and does not perform homing bout. **Should add a condition on the time spent around a same area**. 
     
 ```{r function-simulate_trajectory_FR}
 #' Simulate individual trajectory
+#'
+#' Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around its colony and does not perform homing bout. 
 #'
 #' @param initial_position data.frame containing the coordinates of the point the individual starts from (Lon, Lat fields)
 #' @param resource_layer SpatRaster of the resource layer
@@ -572,6 +581,8 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
 #'
 #' @import lubridate
 #' @importFrom dplyr full_join slice_sample slice_head desc arrange
+#' 
+#' @family individual movement functions
 #' 
 #' @return a data.frame
 #' @export
@@ -763,17 +774,10 @@ library(tidyterra)
 library(lubridate)
 colony_location <- data.frame(Lon = 50, Lat = 50)
 cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 4)
-terra::plot(cdt$rasters)
-# determine the sunrise hour for a random dat
-daylength <- insol::daylength(long = colony_location$Lon, 
-                              lat = colony_location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
     
 single_traj <- simulate_trajectory_FR(initial_position = colony_location, 
                     resource_layer = cdt$rasters, 
-                    starting_hour = ymd_hms(sunrise), # departs at sunrise
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -795,8 +799,10 @@ ggplot(single_traj) +
 
 # look at the density distribution of distance to colony and movement parameters
 ggplot(single_traj) + geom_density(aes(x = dist_col))
-ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = angle)) + facet_wrap("activity")
-ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + geom_density(aes(x = step)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = angle)) + facet_wrap("activity")
+ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) + 
+  geom_density(aes(x = step)) + facet_wrap("activity")
 
 
 ```
@@ -811,16 +817,11 @@ test_that("simulate_trajectory works", {
   library(lubridate)
   colony_location <- data.frame(Lon = 50, Lat = 50)
   cdt <- generate_env_layer(grid = create_grid(), n = 1, seed = 25)
-  daylength <- insol::daylength(long = colony_location$Lon, 
-                              lat = colony_location$Lat, 
-                              jd = insol::JD(as.POSIXct("2022-08-01", tz = "UTC")), tmz = 0)
-sunrise <- format(as.POSIXct(daylength[,1]*3600, 
-                             origin = as.POSIXct("2022-08-01", tz = "UTC"), "%H:%M", tz = "UTC"))
 
   expect_true(
     is.data.frame(simulate_trajectory_FR(initial_position = colony_location, 
                     resource_layer = cdt$rasters, 
-                    starting_hour = ymd_hms(sunrise), # departs at sunrise
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"),
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -835,7 +836,7 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
   
   expect_error(simulate_trajectory_FR(initial_position = colony_location, 
                     resource_layer = colony_location, 
-                    starting_hour = ymd_hms(sunrise), 
+                    starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                     starting_bearing = c(90,10), 
                     starting_step = c(4.5, 3),
                     travel_bearing = c(0, 20), 
@@ -850,7 +851,7 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
   
   expect_error(simulate_trajectory_FR(initial_position = data.frame(Lon = c(50,60), Lat = c(50,60)), 
                         resource_layer = cdt$rasters, 
-                        starting_hour = ymd_hms(sunrise), 
+                        starting_hour = ymd_hms("2022-08-02 06:00:00"), 
                         starting_bearing = c(90,10), 
                         starting_step = c(4.5, 3),
                         travel_bearing = c(0, 20), 
@@ -873,6 +874,8 @@ sunrise <- format(as.POSIXct(daylength[,1]*3600,
 ```{r development-inflate, eval=FALSE}
 # Run but keep eval=FALSE to avoid infinite loop
 # Execute in the console directly
-fusen::inflate(flat_file = "dev/flat_simulate_mvmt.Rmd", vignette_name = "Simulate individual movements")
+fusen::inflate(flat_file = "dev/flat_simulate_mvmt.Rmd", 
+               vignette_name = "Simulate individual movements", 
+               overwrite = T, check = F)
 ```
 
