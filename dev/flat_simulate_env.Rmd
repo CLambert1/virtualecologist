@@ -167,7 +167,7 @@ test_that("generate_env_layer works", {
 
 # Build the suitability layer
 
-The \code{\link{generate_resource_layer}} function permits building a suitability layer from a set of environmental layers and beta parameters to be leveraged with. It mimics a basic resource selection function, where a given environmental layer is simply scaled by the beta parameter (env*beta) and several leveraged env layers are additively combined. For more elaborate procedures, see the package \pkg{virtualspecies}. 
+The \code{\link{generate_resource_layer}} function permits building a suitability layer from a set of environmental layers and beta parameters to be leveraged with. It mimics a basic resource selection function, where a given environmental layer is simply scaled by the beta parameter (env*beta) and several leveraged env layers are additively combined. For more elaborate procedures, see the [virtualspecies package](https://borisleroy.com/files/virtualspecies-tutorial.html).
 
     
 ```{r function-generate_resource_layer}

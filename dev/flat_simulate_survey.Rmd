@@ -192,7 +192,7 @@ detfunc_hr <- function(x, sigma, b) {return( 1-exp(-(x/sigma)^(-b)) )}
 
 # 1. Generate a transect design
 
-This design can be done with the \pkg{dssd} package (L Marshall, 2021) when working on real-world examples. 
+This design can be done with the [dssd package](https://github.com/DistanceDevelopment/dssd) when working on real-world examples. 
 
 The \code{\link{generate_survey_plan}} function presented here provide facilities to build a simple layout. The built layout will consist of parallel transects covering a given area in the virtual environment, spaced out by a given distance and segmented by a given length. The layout can either be horizontal (the default) or vertical. The design can be generated in virtual or real space, but in the latter case, be cautious about the units (you should work with projected coordinates). 
 
