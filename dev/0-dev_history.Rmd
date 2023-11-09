@@ -191,3 +191,9 @@ remotes::install_local(path = "~/simtools_0.0.0.9000.tar.gz") # installe le pack
 simtools::launch_help()
 ```
 
+# gestion des globalVariables
+
+```{r}
+checkhelper::print_globals(quiet = TRUE)
+```
+
