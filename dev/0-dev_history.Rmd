@@ -197,3 +197,31 @@ simtools::launch_help()
 checkhelper::print_globals(quiet = TRUE)
 ```
 
+
+# Create and use logo
+
+```{r}
+#### create hexSticker
+library(hexSticker)
+library(showtext)
+## Loading Google fonts (http://www.google.com/fonts)
+font_add_google("Gochi Hand", "Caveat", "Indie Flower", "Nanum Brush Script")
+## Automatically use showtext to render text for future devices
+showtext_auto()
+
+# load the image stored in data-raw
+image <- magick::image_read('data-raw/crystalball_black.png')
+print(image, info = FALSE) 
+
+# generate sticker
+sticker(image, package = "simtools", 
+        p_family = "gochi", p_size = 30, p_color = "black", p_y = 1.35,
+        h_size = 2, h_fill = "#8ACAFF", h_color = "black",
+        s_x = 1.025, s_y = .7, s_height = 5, s_width = 0.8,
+        filename = "man/figures/logo.png")
+
+# generate the text with html pointer to use in README.Rmd
+usethis::use_logo(img = "man/figures/logo.png")
+```
+
+
