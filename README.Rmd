@@ -39,7 +39,7 @@ You can install the development version of simtools following:
 
 ## Access help and documentation
 
-A dedicated website is available at , or by tipping `launch_help()` in the console, which will launch the html documentation in your web browser. 
+A dedicated website is available at <https://CLambert1.github.io/simtools>, or by tipping `launch_help()` in the console, which will launch the html documentation in your web browser. 
 
 
 ## Code of Conduct
