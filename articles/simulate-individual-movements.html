@@ -89,11 +89,11 @@
 <div class="section level2">
 <h2 id="define-potential-next-positions">Define potential next positions<a class="anchor" aria-label="anchor" href="#define-potential-next-positions"></a>
 </h2>
-<p> generates a bunch of potential positions to chose the next step
-from. Positions are generated based on provided bearing (Von Mises
-distribution) and step distributions (gamma distribution). For each
-position, the value of env_rast is retrieved as well as the distance
-from the colony location.</p>
+<p><code>potential_position_func</code> generates a bunch of potential
+positions to chose the next step from. Positions are generated based on
+provided bearing (Von Mises distribution) and step distributions (gamma
+distribution). For each position, the value of env_rast is retrieved as
+well as the distance from the colony location.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">from</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Lon <span class="op">=</span> <span class="fl">1</span>, Lat <span class="op">=</span> <span class="fl">2</span>, toto <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">colony_location</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Lon <span class="op">=</span> <span class="fl">2</span>, Lat <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
@@ -128,25 +128,27 @@ from the colony location.</p>
 <div class="section level2">
 <h2 id="simulate-the-trajectory-of-a-single-central-place-forager">Simulate the trajectory of a single central-place forager<a class="anchor" aria-label="anchor" href="#simulate-the-trajectory-of-a-single-central-place-forager"></a>
 </h2>
-<p> simulates a full foraging trajectory of an individual departing from
-its colony. The individual launches its trip at a given time period
-(starting.hour, ymd_hms format) and starts its returning trip either
-when at a given distance from its colony (provided with max_dist) or
-after a given time period (max_duration). The user can define the
-bearing and step distributions for the departing step, but also for the
-travelling and foraging bouts. By default, travelling are set to be
-directed movement patterns (large steps with low variability, low angles
-with low variability) and foraging to be area-restricted movements
-(short steps with low variability, large angles with large variability).
-The user can define the step duration, that is the time interval at
-which the positions are sampled.</p>
+<p><code>simulate_trajectory_CPF</code> simulates a full foraging
+trajectory of an individual departing from its colony. The individual
+launches its trip at a given time period (starting.hour, ymd_hms format)
+and starts its returning trip either when at a given distance from its
+colony (provided with max_dist) or after a given time period
+(max_duration). The user can define the bearing and step distributions
+for the departing step, but also for the travelling and foraging bouts.
+By default, travelling are set to be directed movement patterns (large
+steps with low variability, low angles with low variability) and
+foraging to be area-restricted movements (short steps with low
+variability, large angles with large variability). The user can define
+the step duration, that is the time interval at which the positions are
+sampled.</p>
 <p>For each position, ten potential subsequent positions are randomly
-sampled using , that is with movement parameters based on the activity
-the individual is engaged in at the previous step (travelling or
-foraging). The environmental suitability (a raster layer provided with
-resource_layer) is retrieved for each potential point based on their
-geographic coordinates, and their distance from the colony is computed
-using the rdist function from the fields package.</p>
+sampled using <code><a href="../reference/potential_position_func.html">potential_position_func()</a></code>, that is with
+movement parameters based on the activity the individual is engaged in
+at the previous step (travelling or foraging). The environmental
+suitability (a raster layer provided with resource_layer) is retrieved
+for each potential point based on their geographic coordinates, and
+their distance from the colony is computed using the rdist function from
+the fields package.</p>
 <p>The first four positions of the track after colony departure are
 randomly selected within the ten potential points sampled as described
 above, using travelling movement. Afterwards, subsequent positions are
