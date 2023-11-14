@@ -33,6 +33,7 @@ Imports:
     tidyr,
     utils
 Suggests: 
+    covr,
     ggplot2,
     knitr,
     rmarkdown,

@@ -8,3 +8,5 @@
 ^docs$
 ^pkgdown$
 ^data-raw$
+^\.github$
+^codecov\.yml$
