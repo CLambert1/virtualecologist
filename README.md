@@ -35,8 +35,8 @@ You can install the development version of simtools following:
 
 A dedicated website is available at
 <https://CLambert1.github.io/simtools>, or by tipping `launch_help()` in
-the console, which will launch the html documentation in your web
-browser.
+the console, which will launch the locally installed html documentation
+in your web browser.
 
 ## Code of Conduct
 

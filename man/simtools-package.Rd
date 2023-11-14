@@ -6,6 +6,8 @@
 \alias{simtools-package}
 \title{simtools: Tools For Simulation Analyses}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Includes a suite of tools to simulate virtual ecological systems, from environment, to animals and surveys.
 }
 \author{
