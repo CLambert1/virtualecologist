@@ -52,7 +52,7 @@ randomdist <- function(n, shape, rate){
 
 # Define potential next positions
 
-`potential_position_func` generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
+`potential_position_func()` generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
 
 ```{r function-potential_position_func}
 #' Identify potential next positions
@@ -557,7 +557,9 @@ test_that("simulate_trajectory works", {
 
 # Simulate the trajectory of a non-central place forager
 
-`simulate_trajectory_FR` does the same as above, but the individual is not restrained around its colony and does not perform homing bout. **Should add a condition on the time spent around a same area**. 
+`simulate_trajectory_FR()` does the same as above, but the individual is not restrained around its colony and does not perform homing bout. 
+
+To do: add a condition on the time spent around a same area. 
     
 ```{r function-simulate_trajectory_FR}
 #' Simulate individual trajectory
