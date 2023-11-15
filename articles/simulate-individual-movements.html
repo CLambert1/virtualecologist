@@ -89,7 +89,7 @@
 <div class="section level2">
 <h2 id="define-potential-next-positions">Define potential next positions<a class="anchor" aria-label="anchor" href="#define-potential-next-positions"></a>
 </h2>
-<p><code>potential_position_func</code> generates a bunch of potential
+<p><code><a href="../reference/potential_position_func.html">potential_position_func()</a></code> generates a bunch of potential
 positions to chose the next step from. Positions are generated based on
 provided bearing (Von Mises distribution) and step distributions (gamma
 distribution). For each position, the value of env_rast is retrieved as
@@ -128,7 +128,7 @@ well as the distance from the colony location.</p>
 <div class="section level2">
 <h2 id="simulate-the-trajectory-of-a-single-central-place-forager">Simulate the trajectory of a single central-place forager<a class="anchor" aria-label="anchor" href="#simulate-the-trajectory-of-a-single-central-place-forager"></a>
 </h2>
-<p><code>simulate_trajectory_CPF</code> simulates a full foraging
+<p><code><a href="../reference/simulate_trajectory_CPF.html">simulate_trajectory_CPF()</a></code> simulates a full foraging
 trajectory of an individual departing from its colony. The individual
 launches its trip at a given time period (starting.hour, ymd_hms format)
 and starts its returning trip either when at a given distance from its
@@ -229,10 +229,10 @@ colony.</p>
 <div class="section level2">
 <h2 id="simulate-the-trajectory-of-a-non-central-place-forager">Simulate the trajectory of a non-central place forager<a class="anchor" aria-label="anchor" href="#simulate-the-trajectory-of-a-non-central-place-forager"></a>
 </h2>
-<p><code>simulate_trajectory_FR</code> does the same as above, but the
+<p><code><a href="../reference/simulate_trajectory_FR.html">simulate_trajectory_FR()</a></code> does the same as above, but the
 individual is not restrained around its colony and does not perform
-homing bout. <strong>Should add a condition on the time spent around a
-same area</strong>.</p>
+homing bout.</p>
+<p>To do: add a condition on the time spent around a same area.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sjmgarnier.github.io/viridis/" class="external-link">viridis</a></span><span class="op">)</span></span>
