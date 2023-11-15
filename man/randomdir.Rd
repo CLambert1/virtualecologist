@@ -10,6 +10,8 @@ randomdir(n, mu, kappa)
 \item{n}{number of observations.}
 
 \item{mu}{mean direction of the distribution as a \code{circular} object.}
+
+\item{kappa}{numeric, sd parameter}
 }
 \value{
 n random angles

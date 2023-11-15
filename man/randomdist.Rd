@@ -10,6 +10,8 @@ randomdist(n, shape, rate)
 \item{n}{number of observations. If \code{length(n) > 1}, the length
     is taken to be the number required.}
 
+\item{shape}{numeric, must be positive}
+
 \item{rate}{an alternative way to specify the scale.}
 }
 \value{

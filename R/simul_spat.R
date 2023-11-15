@@ -19,7 +19,7 @@
 #' @importFrom tidyr drop_na
 #' @importFrom spatstat.geom as.im
 #' 
-#' @seealso \code{\link{generate_resource_layer()}} \code{\link{generate_env_layers()}}
+#' @seealso \code{\link{generate_resource_layer}} \code{\link{generate_env_layer}}
 #' 
 #' @return Returns an sf object
 #' @export
@@ -34,11 +34,13 @@
 #' out <- simul_spat(ref_map = rsce$rasters, n_sim = 2, 
 #'                   return_wgs_coordinates = FALSE, N = 1000, mean_group_size = 10)
 #'
+#' # plot the simulated distribution
 #' ggplot2::ggplot(out) +
 #'   ggplot2::geom_tile(data = rsce$dataframe, ggplot2::aes(x = x, y = y, fill = suitability)) + 
 #'   ggplot2::geom_sf() + ggplot2::facet_wrap("name") +
 #'   viridis::scale_fill_viridis(option = "H")
 #'
+#' # check the generated group size
 #' ggplot2::ggplot(out) +
 #'    ggplot2::geom_sf(ggplot2::aes(size = size)) + ggplot2::facet_wrap("name") 
 #'

@@ -9,6 +9,13 @@ detfunc_hn(x, sigma)
 
 detfunc_hr(x, sigma, b)
 }
+\arguments{
+\item{x}{numeric}
+
+\item{sigma}{numeric}
+
+\item{b}{numeric}
+}
 \description{
 Half-normal detection function
 

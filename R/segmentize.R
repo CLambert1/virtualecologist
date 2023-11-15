@@ -4,9 +4,9 @@
 ### 
 
 #' Author: Auriane Virgili
-#' @param coords 
-#' @param from 
-#' @param to 
+#' @param coords numeric
+#' @param from numeric
+#' @param to numeric
 #' @export
 #' @rdname segmentize
 CreateSegment <- function(coords, from, to) {
@@ -38,9 +38,9 @@ CreateSegment <- function(coords, from, to) {
 }
 
 #' 
-#' @param coords 
-#' @param length 
-#' @param n.parts 
+#' @param coords numeric
+#' @param length numeric
+#' @param n.parts numeric
 #' @export
 #' @rdname segmentize
 #'
@@ -69,7 +69,7 @@ CreateSegments <- function(coords, length = 0, n.parts = 0) {
   return(newlines)
 }
 
-#' @param lst 
+#' @param lst list
 #' @export
 #' @rdname segmentize
 MergeLast <- function(lst) {

@@ -28,7 +28,7 @@
 #' @export
 #' 
 #' @family survey simulation functions 
-#' @seealso \code{\link{simulate_trajectory_CPF()}} \code{\link{simulate_trajectory_FR()}}
+#' @seealso \code{\link{simulate_trajectory_CPF}} \code{\link{simulate_trajectory_FR}}
 #' 
 #' @examples
 #' # an example with a small number of individuals

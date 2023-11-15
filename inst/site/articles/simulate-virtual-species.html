@@ -91,7 +91,7 @@
 </h2>
 <p>The upcoming analyses necessitates working in a projected
 environment. Because we are in a virtual environment, we must define a
-custom projection. This is what does .</p>
+custom projection. This is what does <code><a href="../reference/custom_proj.html">custom_proj()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/custom_proj.html">custom_proj</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Coordinate Reference System:</span></span>
@@ -142,11 +142,13 @@ custom projection. This is what does .</p>
 <div class="section level2">
 <h2 id="simulate-spatial-point-process">Simulate spatial point process<a class="anchor" aria-label="anchor" href="#simulate-spatial-point-process"></a>
 </h2>
-<p> generates a spatial point process from a reference map, using
-Inhomogeneous Poisson Point Process with spatstat’s IPP. The intensity
-of the process is proportional to this reference map, and the final
-number of individuals in the population is provided by N. Several runs
-can be simulated at the same time.</p>
+<p><code>simul_spat</code> generates a spatial point process from a
+reference map, using Inhomogeneous Poisson Point Process with spatstat’s
+IPP. The intensity of the process is proportional to this reference map,
+and the final number of simulated points is provided by N. Several runs
+can be simulated at the same time. A mark can be associated with each
+point to define the group size of each sighting (with the
+mean_group_size parameter).</p>
 <p>To do : add an id to each generated obs (only done when n_sim =
 1)</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -162,6 +164,7 @@ can be simulated at the same time.</p>
 <span><span class="co">#&gt; Warning in simul_spat(ref_map = rsce$rasters, n_sim = 2, return_wgs_coordinates</span></span>
 <span><span class="co">#&gt; = FALSE, : ref_map has no crs, is that voluntary? The output will have no crs.</span></span>
 <span></span>
+<span><span class="co"># plot the simulated distribution</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_tile.html" class="external-link">geom_tile</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">rsce</span><span class="op">$</span><span class="va">dataframe</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">x</span>, y <span class="op">=</span> <span class="va">y</span>, fill <span class="op">=</span> <span class="va">suitability</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="st">"name"</span><span class="op">)</span> <span class="op">+</span></span>
@@ -169,6 +172,7 @@ can be simulated at the same time.</p>
 <p><img src="simulate-virtual-species_files/figure-html/examples-simul_spat-1.png" width="700"></p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
+<span><span class="co"># check the generated group size</span></span>
 <span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span> <span class="op">+</span></span>
 <span>   <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>size <span class="op">=</span> <span class="va">size</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="st">"name"</span><span class="op">)</span> </span></code></pre></div>
 <p><img src="simulate-virtual-species_files/figure-html/examples-simul_spat-2.png" width="700"></p>

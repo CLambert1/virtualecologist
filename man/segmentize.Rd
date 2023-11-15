@@ -19,17 +19,17 @@ SegmentSpatialLines(sl, length = 0, n.parts = 0, merge.last = FALSE)
 Merge(segments)
 }
 \arguments{
-\item{coords}{}
+\item{coords}{numeric}
 
-\item{from}{}
+\item{from}{numeric}
 
-\item{to}{}
+\item{to}{numeric}
 
 \item{length}{length to segmentize}
 
 \item{n.parts}{number of parts to cut the transect into}
 
-\item{lst}{}
+\item{lst}{list}
 
 \item{sl}{a spatial line object}
 

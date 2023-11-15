@@ -68,7 +68,7 @@ ggplot(survey$effort_table) +
 
 }
 \seealso{
-\code{\link{simulate_trajectory_CPF()}} \code{\link{simulate_trajectory_FR()}}
+\code{\link{simulate_trajectory_CPF}} \code{\link{simulate_trajectory_FR}}
 
 Other survey simulation functions: 
 \code{\link{assign_flight_plan}()},

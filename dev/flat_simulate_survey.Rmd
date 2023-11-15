@@ -21,9 +21,9 @@ pkgload::load_all(export_all = FALSE)
 ### 
 
 #' Author: Auriane Virgili
-#' @param coords 
-#' @param from 
-#' @param to 
+#' @param coords numeric
+#' @param from numeric
+#' @param to numeric
 #' @export
 #' @rdname segmentize
 CreateSegment <- function(coords, from, to) {
@@ -55,9 +55,9 @@ CreateSegment <- function(coords, from, to) {
 }
 
 #' 
-#' @param coords 
-#' @param length 
-#' @param n.parts 
+#' @param coords numeric
+#' @param length numeric
+#' @param n.parts numeric
 #' @export
 #' @rdname segmentize
 #'
@@ -86,7 +86,7 @@ CreateSegments <- function(coords, length = 0, n.parts = 0) {
   return(newlines)
 }
 
-#' @param lst 
+#' @param lst list
 #' @export
 #' @rdname segmentize
 MergeLast <- function(lst) {
@@ -175,11 +175,18 @@ Merge <- function(segments) {
 ```{r function-detection_functions}
 #' Half-normal detection function
 #' 
+#' @param x numeric
+#' @param sigma numeric
+#' 
 #' @export
 #' @rdname detection_functions
 detfunc_hn <- function(x, sigma) {return(exp(-((x/sigma)^2)/2))}
 
 #' Hazard rate detection function
+#' 
+#' @param x numeric
+#' @param sigma numeric
+#' @param b numeric
 #' 
 #' @export
 #' @rdname detection_functions
@@ -768,7 +775,7 @@ Note: there must not be a too large difference between the size of segments and 
 #' @export
 #' 
 #' @family survey simulation functions 
-#' @seealso \code{\link{simulate_trajectory_CPF()}} \code{\link{simulate_trajectory_FR()}}
+#' @seealso \code{\link{simulate_trajectory_CPF}} \code{\link{simulate_trajectory_FR}}
 #' 
 #' @examples
 launch_survey_on_movement <- function(

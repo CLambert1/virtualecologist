@@ -9,7 +9,7 @@
 #' @param step  Numeric, shape and rate to be passed on randomdist
 #' @param from data.frame including Lon and Lat fields and stepID of the point of origin
 #' @param colony_location data.frame vector with lon and lat position of the colony
-#' @param resource.layer SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)
+#' @param resource_layer SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)
 #' 
 #' @importFrom terra extract nlyr
 #' @importFrom fields rdist

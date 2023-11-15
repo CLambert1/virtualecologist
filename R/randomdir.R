@@ -3,6 +3,7 @@
 #' Return random direction angles
 #'
 #' @inheritParams circular::rwrappednormal 
+#' @param kappa numeric, sd parameter
 #'
 #' @importFrom circular rwrappednormal 
 #'
@@ -20,7 +21,8 @@ randomdir <- function(n,mu,kappa){
 #' Return random step lengths
 #'
 #' @inheritParams stats::rgamma 
-#'
+#' @param shape numeric, must be positive
+#' 
 #' @importFrom stats rgamma 
 #'
 #' @return n random step lengths

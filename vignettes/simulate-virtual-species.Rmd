@@ -22,7 +22,7 @@ library(simtools)
 
 # Create a custom projection
 
-The upcoming analyses necessitates working in a projected environment. Because we are in a virtual environment, we must define a custom projection. This is what does \code{\link{custom_proj()}}.
+The upcoming analyses necessitates working in a projected environment. Because we are in a virtual environment, we must define a custom projection. This is what does `custom_proj()`.
     
 
   
@@ -42,7 +42,7 @@ custom_proj()
 
 # Simulate spatial point process
 
-\code{\link{simul_spat}} generates a spatial point process from a reference map, using Inhomogeneous Poisson Point Process with spatstat's IPP. The intensity of the process is proportional to this reference map, and the final number of individuals in the population is provided by N. Several runs can be simulated at the same time. 
+`simul_spat` generates a spatial point process from a reference map, using Inhomogeneous Poisson Point Process with spatstat's IPP. The intensity of the process is proportional to this reference map, and the final number of simulated points is provided by N. Several runs can be simulated at the same time. A mark can be associated with each point to define the group size of each sighting (with the mean_group_size parameter). 
 
 To do : add an id to each generated obs (only done when n_sim = 1)
 
@@ -58,11 +58,13 @@ rsce <- generate_resource_layer(env_layers = cdt$rasters,
 out <- simul_spat(ref_map = rsce$rasters, n_sim = 2, 
                   return_wgs_coordinates = FALSE, N = 1000, mean_group_size = 10)
 
+# plot the simulated distribution
 ggplot2::ggplot(out) +
   ggplot2::geom_tile(data = rsce$dataframe, ggplot2::aes(x = x, y = y, fill = suitability)) + 
   ggplot2::geom_sf() + ggplot2::facet_wrap("name") +
   viridis::scale_fill_viridis(option = "H")
 
+# check the generated group size
 ggplot2::ggplot(out) +
    ggplot2::geom_sf(ggplot2::aes(size = size)) + ggplot2::facet_wrap("name") 
 

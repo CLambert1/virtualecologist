@@ -2,11 +2,18 @@
 
 #' Half-normal detection function
 #' 
+#' @param x numeric
+#' @param sigma numeric
+#' 
 #' @export
 #' @rdname detection_functions
 detfunc_hn <- function(x, sigma) {return(exp(-((x/sigma)^2)/2))}
 
 #' Hazard rate detection function
+#' 
+#' @param x numeric
+#' @param sigma numeric
+#' @param b numeric
 #' 
 #' @export
 #' @rdname detection_functions

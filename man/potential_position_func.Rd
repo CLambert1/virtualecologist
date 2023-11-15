@@ -24,7 +24,7 @@ potential_position_func(
 
 \item{colony_location}{data.frame vector with lon and lat position of the colony}
 
-\item{resource.layer}{SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)}
+\item{resource_layer}{SpatRaster, the suitability or any resource layer to be used to sort potential position (a single layer)}
 }
 \value{
 A data.frame with the n potential positions from the point of origin, informed with the value of the provided environmental layer corresponding to each as well as the distance from the colony.
