@@ -5,7 +5,7 @@ template:
   theme:  github-light
 navbar:
   structure:
-    left:  [intro, reference, articles, tutorials, news]
+    left:  [intro, articles, reference, tutorials, news]
     right: [search, github]
 articles:
 - title: Articles
