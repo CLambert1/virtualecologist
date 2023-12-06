@@ -3,10 +3,17 @@ template:
   bootstrap: 5
   bootswatch: flatly
   theme:  github-light
+repo:
+  url:
+    home: https://github.com/CLambert1/simtools
 navbar:
   structure:
     left:  [intro, articles, reference, tutorials, news]
     right: [search, github]
+  components:
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/CLambert1/simtools
 articles:
 - title: Articles
   navbar: ~
