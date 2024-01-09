@@ -60,7 +60,7 @@ simulate_trajectory_FR(
 a data.frame
 }
 \description{
-Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around its colony and does not perform homing bout.
+Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around a colony and does not perform homing bout. Here, \code{potential_position_func()} considers the initial position as the colony, so that the dist_col field in the output corresponds to the distance to this starting point.
 }
 \examples{
 library(ggplot2)
@@ -87,7 +87,7 @@ single_traj <- simulate_trajectory_FR(initial_position = colony_location,
 
 # view the trajectory
 ggplot(single_traj) +
-  geom_spatraster(data = cdt$rasters) + 
+  geom_spatraster(data = cdt$rasters, alpha = 0.5) + 
   geom_point(aes(x = Lon, y = Lat, color = activity)) +
   geom_point(data = colony_location, aes(x = Lon, y = Lat), col = "red") +
   scale_fill_viridis(option = "H") 

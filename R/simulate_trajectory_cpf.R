@@ -64,7 +64,7 @@
 #'
 #' # view the trajectory
 #' ggplot(single_traj) +
-#'   geom_spatraster(data = cdt$rasters) + 
+#'   geom_spatraster(data = cdt$rasters, alpha = 0.5) + 
 #'   geom_point(aes(x = Lon, y = Lat, color = activity)) +
 #'   geom_point(data = colony_location, aes(x = Lon, y = Lat), col = "red") +
 #'   scale_fill_viridis(option = "H") 

@@ -22,11 +22,9 @@
 #' grid <- create_grid()
 #'
 #' str(generate_env_layer(norm = FALSE, return_rasters = FALSE, grid = grid))
-#' str(generate_env_layer(norm = TRUE, return_rasters = FALSE, grid = grid))
 #'
 #' library(terra)
 #' plot(generate_env_layer(norm = TRUE, return_rasters = TRUE, grid = grid)$rasters)
-#' plot(generate_env_layer(norm = FALSE, return_rasters = TRUE, grid = grid)$rasters)
 generate_env_layer <- function(seed = 2, 
                                grid, 
                                n = 2, 
