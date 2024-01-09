@@ -119,22 +119,12 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ y   : num  0 0 0 0 0 0 0 0 0 0 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ sim1: num  4.7 5.35 4.82 7.42 6.74 ...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  $ sim2: num  -0.381 -0.575 -0.766 -3.876 -4.276 ...</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu">generate_env_layer</span><span class="op">(</span>norm <span class="op">=</span> <span class="cn">TRUE</span>, return_rasters <span class="op">=</span> <span class="cn">FALSE</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [using unconditional Gaussian simulation]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 'data.frame':	32761 obs. of  4 variables:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ x   : num  0 0.5 1 1.5 2 2.5 3 3.5 4 4.5 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ y   : num  0 0 0 0 0 0 0 0 0 0 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ sim1: num  0.213 0.234 0.217 0.301 0.279 ...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  $ sim2: num  0.455 0.45 0.445 0.367 0.357 ...</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://rspatial.org/" class="external-link">terra</a></span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.7.55</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> terra 1.7.65</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">generate_env_layer</span><span class="op">(</span>norm <span class="op">=</span> <span class="cn">TRUE</span>, return_rasters <span class="op">=</span> <span class="cn">TRUE</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span><span class="op">$</span><span class="va">rasters</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [using unconditional Gaussian simulation]</span>
 <span class="r-plt img"><img src="generate_env_layer-1.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">generate_env_layer</span><span class="op">(</span>norm <span class="op">=</span> <span class="cn">FALSE</span>, return_rasters <span class="op">=</span> <span class="cn">TRUE</span>, grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span><span class="op">$</span><span class="va">rasters</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [using unconditional Gaussian simulation]</span>
-<span class="r-plt img"><img src="generate_env_layer-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
