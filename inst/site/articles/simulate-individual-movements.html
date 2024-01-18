@@ -97,10 +97,10 @@
 <h2 id="define-potential-next-positions">Define potential next positions<a class="anchor" aria-label="anchor" href="#define-potential-next-positions"></a>
 </h2>
 <p><code><a href="../reference/potential_position_func.html">potential_position_func()</a></code> generates a bunch of potential
-positions to chose the next step from. Positions are generated based on
-provided bearing (Von Mises distribution) and step distributions (gamma
-distribution). For each position, the value of env_rast is retrieved as
-well as the distance from the colony location.</p>
+positions to choose the next step from. Positions are generated based on
+provided bearing (Von Mises) and step (Gamma) distributions. For each
+position, the value of resource_layer is retrieved as well as the
+distance from the colony location.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">from</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Lon <span class="op">=</span> <span class="fl">1</span>, Lat <span class="op">=</span> <span class="fl">2</span>, toto <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">colony_location</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>Lon <span class="op">=</span> <span class="fl">2</span>, Lat <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
@@ -158,9 +158,19 @@ their distance from the colony is computed using the rdist function from
 the fields package.</p>
 <p>The first four positions of the track after colony departure are
 randomly selected within the ten potential points sampled as described
-above, using travelling movement. Afterwards, subsequent positions are
-randomly sampled among the four out of ten potential points which have
-the highest values of environmental suitability. If the environmental
+above, using travelling movement. Afterwards, residence time is checked
+for every points: residence time is considered reached when a
+user-defined number of previous positions (as defined with
+residence_time) fall within the residence_radius. If the residence time
+is reached, the potential subsequent positions falling outside the
+residence_radius are extracted, and the next position is sampled as the
+one of them with the highest environmental suitability. If no potential
+position falls outside the radius (which can be the case when the radius
+largely exceeds the steps), the next position is the point situated at
+the largest distance from the previous position in the track. If the
+residence time is not reached, the subsequent position is randomly
+sampled among the four out of ten potential points which have the
+highest values of environmental suitability. If the environmental
 suitability exceeds a given threshold (activity_threshold), the
 individual switches to foraging movements; if not, the individual
 continues travelling.</p>
@@ -210,7 +220,9 @@ colony.</p>
 <span>                    max_dist <span class="op">=</span> <span class="fl">40</span>,</span>
 <span>                    step_duration <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>                    activity_threshold <span class="op">=</span> <span class="fl">0.70</span>,</span>
-<span>                    max_duration <span class="op">=</span> <span class="fl">720</span><span class="op">)</span></span>
+<span>                    max_duration <span class="op">=</span> <span class="fl">720</span>,</span>
+<span>                    residence_radius <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>                    residence_time <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># view the trajectory</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">single_traj</span><span class="op">)</span> <span class="op">+</span></span>
@@ -239,7 +251,6 @@ colony.</p>
 <p><code><a href="../reference/simulate_trajectory_FR.html">simulate_trajectory_FR()</a></code> does the same as above, but the
 individual is not restrained around its colony and does not perform
 homing bout.</p>
-<p>To do: add a condition on the time spent around a same area.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sjmgarnier.github.io/viridis/" class="external-link">viridis</a></span><span class="op">)</span></span>
@@ -262,7 +273,9 @@ homing bout.</p>
 <span>                    miny <span class="op">=</span> <span class="fl">0</span>, maxy <span class="op">=</span> <span class="fl">90</span>,</span>
 <span>                    step_duration <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>                    activity_threshold <span class="op">=</span> <span class="fl">0.7</span>,</span>
-<span>                    max_duration <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span>
+<span>                    max_duration <span class="op">=</span> <span class="fl">2000</span>,</span>
+<span>                    residence_radius <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                    residence_time <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># view the trajectory</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">single_traj</span><span class="op">)</span> <span class="op">+</span></span>

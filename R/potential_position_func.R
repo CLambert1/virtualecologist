@@ -2,7 +2,7 @@
 
 #' Identify potential next positions
 #'
-#' The function generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
+#' The function generates a bunch of potential positions to choose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (Gamma distribution). For each position, the value of `resource_layer` is retrieved as well as the distance from the colony location. 
 #'
 #' @param n Numeric, the number of potential positions to generate
 #' @param bearing Numeric vector, mu and kappa to be passed on randomdir

@@ -22,7 +22,7 @@ library(simtools)
 
 # Define potential next positions
 
-`potential_position_func()` generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location. 
+`potential_position_func()` generates a bunch of potential positions to choose the next step from. Positions are generated based on provided bearing (Von Mises) and step (Gamma) distributions. For each position, the value of resource_layer is retrieved as well as the distance from the colony location. 
 
 
 ```{r example-potential_position_func}
@@ -43,7 +43,7 @@ The user can define the step duration, that is the time interval at which the po
 
 For each position, ten potential subsequent positions are randomly sampled using `potential_position_func()`, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package. 
 
-The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, subsequent positions are randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity_threshold), the individual switches to foraging movements; if not, the individual continues travelling.
+The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, residence time is checked for every points: residence time is considered reached when a user-defined number of previous positions (as defined with residence_time) fall within the residence_radius. If the residence time is reached, the potential subsequent positions falling outside the residence_radius are extracted, and the next position is sampled as the one of them with the highest environmental suitability. If no potential position falls outside the radius (which can be the case when the radius largely exceeds the steps), the next position is the point situated at the largest distance from the previous position in the track. If the residence time is not reached, the subsequent position is randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity_threshold), the individual switches to foraging movements; if not, the individual continues travelling.
 
 When individuals reaches the threshold distance to colony (max_dist), or the trip duration exceeds the given duration (max_duration), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
 
@@ -74,7 +74,9 @@ single_traj <- simulate_trajectory_CPF(initial_position = colony_location,
                     max_dist = 40,
                     step_duration = 5,
                     activity_threshold = 0.70,
-                    max_duration = 720)
+                    max_duration = 720,
+                    residence_radius = 2,
+                    residence_time = 20)
 
 # view the trajectory
 ggplot(single_traj) +
@@ -101,7 +103,6 @@ ggplot(single_traj |> subset(activity %in% c("forage", "travel"))) +
 
 `simulate_trajectory_FR()` does the same as above, but the individual is not restrained around its colony and does not perform homing bout. 
 
-To do: add a condition on the time spent around a same area. 
     
 
   
@@ -127,7 +128,9 @@ single_traj <- simulate_trajectory_FR(initial_position = colony_location,
                     miny = 0, maxy = 90,
                     step_duration = 1,
                     activity_threshold = 0.7,
-                    max_duration = 2000)
+                    max_duration = 2000,
+                    residence_radius = 1,
+                    residence_time = 20)
 
 # view the trajectory
 ggplot(single_traj) +
