@@ -8,7 +8,7 @@ globalVariables(unique(c(
   # launch_survey_on_movement : <anonymous>:
   "dist_seg_edge", "overlap_duration", "seg_id", "track_id",
   # simulate_trajectory_CPF:
-  "dist_col", "env", "Lat", "Lon",
+  "dist_col", "env", "Lat", "Lon", "dist_from_previous",
   # simulate_trajectory_FR:
-  "env", "Lat", "Lon"
+  "env", "Lat", "Lon", "dist_from_previous"
 )))

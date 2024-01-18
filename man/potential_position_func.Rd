@@ -30,7 +30,7 @@ potential_position_func(
 A data.frame with the n potential positions from the point of origin, informed with the value of the provided environmental layer corresponding to each as well as the distance from the colony.
 }
 \description{
-The function generates a bunch of potential positions to chose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (gamma distribution). For each position, the value of env_rast is retrieved as well as the distance from the colony location.
+The function generates a bunch of potential positions to choose the next step from. Positions are generated based on provided bearing (Von Mises distribution) and step distributions (Gamma distribution). For each position, the value of \code{resource_layer} is retrieved as well as the distance from the colony location.
 }
 \examples{
 from <- data.frame(Lon = 1, Lat = 2, toto = 5)

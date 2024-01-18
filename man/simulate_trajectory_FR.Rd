@@ -20,7 +20,9 @@ simulate_trajectory_FR(
   maxy = 90,
   step_duration = 1,
   activity_threshold = 0.5,
-  max_duration = 720
+  max_duration = 720,
+  residence_radius = NULL,
+  residence_time = NULL
 )
 }
 \arguments{
@@ -55,6 +57,10 @@ simulate_trajectory_FR(
 \item{activity_threshold}{Threshold environmental value defining when an individual switches from travelling to foraging movement}
 
 \item{max_duration}{Total duration of a full trip, in minutes (defaults to 720, 12h)}
+
+\item{residence_radius}{The distance at which testing for residence time (in system unit). This value is used to draw a radius around each position to evaluate the residence time. If one of \code{residence_radius} and \code{residence_time} is NULL (both, by default), no residence time constraint is applied.}
+
+\item{residence_time}{The time an animal is allowed to spend in a same area (residence time). Expressed in number of steps (take care to provide a number of step consistent with \code{step_duration}). If one of \code{residence_radius} and \code{residence_time} is NULL (both, by default), no residence time constraint is applied.}
 }
 \value{
 a data.frame
@@ -83,7 +89,9 @@ single_traj <- simulate_trajectory_FR(initial_position = colony_location,
                     miny = 0, maxy = 90,
                     step_duration = 1,
                     activity_threshold = 0.7,
-                    max_duration = 2000)
+                    max_duration = 2000,
+                    residence_radius = 1,
+                    residence_time = 20)
 
 # view the trajectory
 ggplot(single_traj) +

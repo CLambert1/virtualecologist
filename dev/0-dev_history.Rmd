@@ -158,6 +158,7 @@ covr::report()
 # set and try pkgdown documentation website locally
 usethis::use_pkgdown()
 
+options(rmarkdown.html_vignette.check_title = FALSE) 
 # reconstruit le site en entier
 pkgdown::build_site(override = list(destination = "inst/site")) # faire dans inst/ plutot que à la racine, pour que le site soit installé en local avec le package et donc accessible sans internet
 # custom appearence in _pkgdown.yml (racine du package)

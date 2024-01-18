@@ -21,7 +21,9 @@ simulate_trajectory_CPF(
   max_dist = 40,
   step_duration = 1,
   activity_threshold = 0.5,
-  max_duration = 720
+  max_duration = 720,
+  residence_radius = NULL,
+  residence_time = NULL
 )
 }
 \arguments{
@@ -58,6 +60,10 @@ simulate_trajectory_CPF(
 \item{activity_threshold}{Threshold environmental value defining when an individual switches from travelling to foraging movement}
 
 \item{max_duration}{Total duration of a full trip, in minutes (defaults to 720, 12h)}
+
+\item{residence_radius}{The distance at which testing for residence time (in system unit). This value is used to draw a radius around each position to evaluate the residence time. If one of \code{residence_radius} and \code{residence_time} is NULL (both, by default), no residence time constraint is applied.}
+
+\item{residence_time}{The time an animal is allowed to spend in a same area (residence time). Expressed in number of steps (take care to provide a number of step consistent with \code{step_duration}). If one of \code{residence_radius} and \code{residence_time} is NULL (both, by default), no residence time constraint is applied.}
 }
 \value{
 a data.frame
@@ -66,10 +72,10 @@ a data.frame
 Simulate the trajectory of a central-place forager over a given time period.
 }
 \details{
-The individual launches its trip at a given time period (starting.hour, ymd_hms format) and starts its returning trip either when at a given distance from its colony (provided with max_dist) or after a given time period (max_duration). The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). The user can define the step duration, that is the time  interval at which the positions are sampled.
-For each position, ten potential subsequent positions are randomly sampled using \code{\link{potential_position_func}}, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the rdist function from the fields package.
-The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, subsequent positions are randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability exceeds a given threshold (activity_threshold), the individual switches to foraging movements; if not, the individual continues travelling.
-When individuals reaches the threshold distance to colony (max_dist), or the trip duration exceeds the given duration (max_duration), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
+The individual launches its trip at a given time period (\code{starting.hour}, \code{ymd_hms} format) and starts its returning trip either when at a given distance from its colony (provided with \code{max_dist}) or after a given time period (max_duration). The user can define the bearing and step distributions for the departing step, but also for the travelling and foraging bouts. By default, travelling are set to be directed movement patterns (large steps with low variability, low angles with low variability) and foraging to be area-restricted movements (short steps with low variability, large angles with large variability). The user can define the step duration, that is the time  interval at which the positions are sampled.
+For each position, ten potential subsequent positions are randomly sampled using \code{\link{potential_position_func}}, that is with movement parameters based on the activity the individual is engaged in at the previous step (travelling or foraging). The environmental suitability (a raster layer provided with resource_layer) is retrieved for each potential point based on their geographic coordinates, and their distance from the colony is computed using the \code{rdist} function from the fields package.
+The first four positions of the track after colony departure are randomly selected within the ten potential points sampled as described above, using travelling movement. Afterwards, residence time is checked for every points: residence time is considered reached when a user-defined number of previous positions (as defined with \code{residence_time}) fall within the \code{residence_radius}. If the residence time is reached, the potential subsequent positions falling outside the residence_radius are extracted, and the next position is sampled as the one of them with the highest environmental suitability. If no potential position falls outside the radius (which can be the case when the radius largely exceeds the steps), the next position is the point situated at the largest distance from the previous position in the track. If the residence time is not reached, the subsequent position is randomly sampled among the four out of ten potential points which have the highest values of environmental suitability. If the environmental suitability of the selected subsequent position exceeds a given threshold (\code{activity_threshold}), the individual switches to foraging movements; if not, the individual continues travelling.
+When individuals reaches the threshold distance to colony (\code{max_dist}), or the trip duration exceeds the given duration (\code{max_duration}), they start their homeward journey. Potential next positions are sampled using only travelling movement parameters, and the next positions are selected based on the minimum distance to the colony. If several potential positions meet the selection criteria, the next step is randomly sampled within these positions. An individual is considered back when within 0.5 spatial unit (the unit depends on the provided resource layer) from the colony.
 }
 \examples{
 library(ggplot2)
@@ -95,7 +101,9 @@ single_traj <- simulate_trajectory_CPF(initial_position = colony_location,
                     max_dist = 40,
                     step_duration = 5,
                     activity_threshold = 0.70,
-                    max_duration = 720)
+                    max_duration = 720,
+                    residence_radius = 2,
+                    residence_time = 20)
 
 # view the trajectory
 ggplot(single_traj) +
