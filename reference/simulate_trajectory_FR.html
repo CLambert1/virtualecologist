@@ -76,7 +76,9 @@
 <span>  maxy <span class="op">=</span> <span class="fl">90</span>,</span>
 <span>  step_duration <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  activity_threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  max_duration <span class="op">=</span> <span class="fl">720</span></span>
+<span>  max_duration <span class="op">=</span> <span class="fl">720</span>,</span>
+<span>  residence_radius <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  residence_time <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -145,6 +147,14 @@
 <dt>max_duration</dt>
 <dd><p>Total duration of a full trip, in minutes (defaults to 720, 12h)</p></dd>
 
+
+<dt>residence_radius</dt>
+<dd><p>The distance at which testing for residence time (in system unit). This value is used to draw a radius around each position to evaluate the residence time. If one of <code>residence_radius</code> and <code>residence_time</code> is NULL (both, by default), no residence time constraint is applied.</p></dd>
+
+
+<dt>residence_time</dt>
+<dd><p>The time an animal is allowed to spend in a same area (residence time). Expressed in number of steps (take care to provide a number of step consistent with <code>step_duration</code>). If one of <code>residence_radius</code> and <code>residence_time</code> is NULL (both, by default), no residence time constraint is applied.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -184,7 +194,9 @@
 <span class="r-in"><span>                    miny <span class="op">=</span> <span class="fl">0</span>, maxy <span class="op">=</span> <span class="fl">90</span>,</span></span>
 <span class="r-in"><span>                    step_duration <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>                    activity_threshold <span class="op">=</span> <span class="fl">0.7</span>,</span></span>
-<span class="r-in"><span>                    max_duration <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                    max_duration <span class="op">=</span> <span class="fl">2000</span>,</span></span>
+<span class="r-in"><span>                    residence_radius <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>                    residence_time <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># view the trajectory</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">single_traj</span><span class="op">)</span> <span class="op">+</span></span></span>
