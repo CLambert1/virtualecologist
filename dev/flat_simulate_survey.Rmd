@@ -843,24 +843,21 @@ launch_survey_on_movement <- function(
       sub_traj <- sf::st_sf(sub_traj)
       # plot(sf::st_geometry(sub_traj), axes = T) 
       
-      # look which movement bouts cross the segment or are included within the segment
-      cross_id <- unlist( sf::st_crosses(x = sub_seg, y = sub_traj, sparse = T) )
-      within_id <- unlist( sf::st_contains(x = sub_seg, y = sub_traj, sparse = T) )
-      det_id <- c(cross_id, within_id)
+      # look which movement bouts have their centroids inside the seg
+      within_id <- unlist( sf::st_contains(x = sub_seg, 
+                                           y = sub_traj |> sf::st_cast("MULTIPOINT"), sparse = T) )
       
       # sum the number of movement bouts
-      if(length(det_id) != 0){
-        obs <- data.frame(track_id = sub_traj$track_id[det_id], 
-                          step_id = sub_traj$stepID[det_id], 
+      if(length(within_id) != 0){
+        obs <- data.frame(track_id = sub_traj$track_id[within_id], 
+                          step_id = sub_traj$stepID[within_id], 
                           seg_id = sub_seg$seg_id,
-                          dist_seg_edge = sub_traj[det_id,] |> suppressWarnings(sf::st_centroid()) |> sf::st_distance(sub_seg),
                           start_time_seg = sub_seg$start_time,
                           end_time_seg = sub_seg$end_time
         )
         obs <- obs |>
-          dplyr::mutate(centroid_x = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[det_id,] ))[,"X"])),
-                        centroid_y = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[det_id,] ))[,"Y"])) )
-        obs <- obs |> subset(dist_seg_edge == 0) # remove movement bouts whose centroid is not included in the seg (= too far from the transect line)
+          dplyr::mutate(centroid_x = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[within_id,] ))[,"X"])),
+                        centroid_y = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[within_id,] ))[,"Y"])) )
         sub_seg$N_ind_tot <- nrow( obs[!duplicated(obs),] )
       } else {
         sub_seg$N_ind_tot <- 0
