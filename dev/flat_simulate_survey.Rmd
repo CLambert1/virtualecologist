@@ -765,7 +765,7 @@ Note: there must not be a too large difference between the size of segments and 
 #'
 #' @importFrom sf st_linestring st_sfc st_as_sf st_sf st_centroid st_distance st_crosses st_contains st_coordinates st_drop_geometry
 #' @importFrom lubridate as.duration interval intersect int_overlaps
-#' @importFrom dplyr pull left_join ungroup group_by mutate n summarize
+#' @importFrom dplyr pull left_join ungroup group_by mutate n summarize slice_head arrange
 #' @importFrom purrr map
 #' @importFrom glue glue
 #' @importFrom stats rbinom
