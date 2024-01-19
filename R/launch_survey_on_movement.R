@@ -106,11 +106,13 @@ launch_survey_on_movement <- function(
     # if there is matching movement bouts, process detection
     if(nrow(sub_traj) != 0){
       # select only the longer overlap if several matching movement bouts for a single individual
+      # and sample the first if several bouts have the same overlap duration for a same individual
       sub_traj$overlap_duration <- lubridate::as.duration(lubridate::intersect(sub_traj$interval, interval_seg))
-      sub_traj <- sub_traj |> 
-        dplyr::group_by(track_id) |>
-        subset(overlap_duration == max(overlap_duration)) |>
-        dplyr::ungroup()
+      sub_traj <- sub_traj|> 
+      dplyr::group_by(track_id)  |> 
+      dplyr::arrange(dplyr::desc(overlap_duration)) |> 
+      dplyr::slice_head(n = 1) |> 
+      dplyr::ungroup() 
   
       # transform movement bouts to linestring
       sub_traj$geometry = sf::st_sfc(sapply(1:nrow(sub_traj), 
