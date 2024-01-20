@@ -136,7 +136,7 @@ simulate_trajectory_CPF <- function(initial_position,
     # starts with the initial bearing
     if(i == 2){ 
       potential_position <- NULL
-      while(is.null(nrow(potential_position))) { # if no points possible then do it again
+      while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if no points possible then do it again
         potential_position <- potential_position_func(n = 10, 
                                                       bearing = starting_bearing, 
                                                       step = starting_step, 
@@ -158,7 +158,7 @@ simulate_trajectory_CPF <- function(initial_position,
     # continue with traveling parameters but not yet condition on environment
     if(i %in% c(3:5)){
       potential_position <- NULL
-      while(is.null(nrow(potential_position))) { # if no points possible then do it again
+      while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if no points possible then do it again
         potential_position <- potential_position_func(n = 10, 
                                                       bearing = travel_bearing, 
                                                       step = travel_step, 
@@ -193,7 +193,7 @@ simulate_trajectory_CPF <- function(initial_position,
           if(isTRUE(all(sf::st_within(previous_positions, buf, sparse = F)))){ # if all points during the residence time interval are within the residence radius, then subset the one point farthest from the previous step
             # sample potential points
             potential_position <- NULL
-            while(is.null(nrow(potential_position))) { # if table is empty then do it again
+            while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if table is empty then do it again
               potential_position <- potential_position_func(n = 10, 
                                                             bearing = travel_bearing, 
                                                             step = travel_step, 
@@ -223,7 +223,7 @@ simulate_trajectory_CPF <- function(initial_position,
             }
           } else {
             potential_position <- NULL
-            while(is.null(nrow(potential_position))) { # if table is empty then do it again
+            while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if table is empty then do it again
               potential_position <- potential_position_func(n = 10, 
                                                             bearing = travel_bearing, 
                                                             step = travel_step, 
@@ -239,7 +239,7 @@ simulate_trajectory_CPF <- function(initial_position,
           }
         } else {
           potential_position <- NULL
-          while(is.null(nrow(potential_position))) { # if table is empty then do it again
+          while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if table is empty then do it again
               potential_position <- potential_position_func(n = 10, 
                                                             bearing = travel_bearing, 
                                                             step = travel_step, 
@@ -267,7 +267,7 @@ simulate_trajectory_CPF <- function(initial_position,
           if(isTRUE(all(sf::st_within(previous_positions, buf, sparse = F)))){ # if all points during the residence time interval are within the residence radius, then subset the one point farthest from the previous step
             # sample potential points
             potential_position <- NULL
-            while(is.null(nrow(potential_position))) { # if table is empty then do it again
+            while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if table is empty then do it again
               potential_position <- potential_position_func(n = 10, 
                                                             bearing = foraging_bearing, 
                                                             step = foraging_step, 
@@ -297,7 +297,7 @@ simulate_trajectory_CPF <- function(initial_position,
             }
           } else {
             potential_position <- NULL
-            while(is.null(nrow(potential_position))) { # if table is empty then do it again
+            while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if table is empty then do it again
               potential_position <- potential_position_func(n = 10, 
                                                             bearing = foraging_bearing, 
                                                             step = foraging_step, 
@@ -313,7 +313,7 @@ simulate_trajectory_CPF <- function(initial_position,
           }
         } else {
           potential_position <- NULL
-          while(is.null(nrow(potential_position))) { # if table is empty then do it again
+          while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if table is empty then do it again
               potential_position <- potential_position_func(n = 10, 
                                                             bearing = foraging_bearing, 
                                                             step = foraging_step, 
@@ -345,7 +345,7 @@ simulate_trajectory_CPF <- function(initial_position,
     # sample potential positions based on movement type of previous step, select next step based on minimum distance to colony
     if(track_output[i-1, "activity"] == "travel"){
       potential_position <- NULL
-      while(is.null(nrow(potential_position))) { # if no points possible then do it again 
+      while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) { # if no points possible then do it again 
         potential_position <- potential_position_func(n = 10, 
                                                       bearing = travel_bearing, 
                                                       step = travel_step, 
@@ -360,7 +360,7 @@ simulate_trajectory_CPF <- function(initial_position,
     }
     if(track_output[i-1, "activity"] == "forage"){
       potential_position <- NULL
-      while(is.null(nrow(potential_position))) {  # if no points possible then do it again
+      while(any(is.null(potential_position) | isTRUE(nrow(potential_position) == 0))) {  # if no points possible then do it again
         potential_position <- potential_position_func(n = 10, 
                                                       bearing = foraging_bearing, 
                                                       step = foraging_step, 
