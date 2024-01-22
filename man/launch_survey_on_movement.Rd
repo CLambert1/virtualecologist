@@ -43,13 +43,13 @@ This function identifies the individuals detected during a standardised survey b
 }
 \examples{
 # an example with a small number of individuals
-survey <- suppressMessages(launch_survey_on_movement(
+survey <- launch_survey_on_movement(
   survey_data_buffered = example_data$flight_plan,
   survey_data_linear = example_data$survey$segments,
   traj_data = example_data$mvmt_data,
   line_transect = TRUE, detection_function = "hn",
   sigma = 0.2
-))
+)
 
 # look at the number of sightings
 summary(survey$effort_table$N_ind_tot)

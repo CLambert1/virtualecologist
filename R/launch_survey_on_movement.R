@@ -22,6 +22,7 @@
 #' @importFrom purrr map
 #' @importFrom glue glue
 #' @importFrom stats rbinom
+#' @importFrom pbapply pblapply
 #'
 #' @return A list included an effort table (the survey_data with the number of individuals sighted per segment "N_ind_tot") and an obs_table (summarising the movement bouts detected by the survey, with their centroid coordinates). If line_transect is TRUE, obs_table includes two supplementary columns describing the probability an individual is detected based on its distance to the track line ("prob_dist") and whether it is detected or not ("detected"), while the effort table includes an additional column ("N_ind_detected") summarising the number of individuals detected based on distance to the track line. 
 #' 
@@ -32,13 +33,13 @@
 #' 
 #' @examples
 #' # an example with a small number of individuals
-#' survey <- suppressMessages(launch_survey_on_movement(
+#' survey <- launch_survey_on_movement(
 #'   survey_data_buffered = example_data$flight_plan,
 #'   survey_data_linear = example_data$survey$segments,
 #'   traj_data = example_data$mvmt_data,
 #'   line_transect = TRUE, detection_function = "hn",
 #'   sigma = 0.2
-#' ))
+#' )
 #'
 #' # look at the number of sightings
 #' summary(survey$effort_table$N_ind_tot)
@@ -92,8 +93,7 @@ launch_survey_on_movement <- function(
   survey_data_buffered$interval <- lubridate::interval(survey_data_buffered$start_time, survey_data_buffered$end_time)
   
   # launch the detection process
-  detection_table <- lapply(1:nrow(survey_data_buffered), function(i){
-    message(glue::glue("Processing survey segment {i}"))
+  detection_table <- pbapply::pblapply(1:nrow(survey_data_buffered), function(i){
     
     # subset each segment
     sub_seg <- survey_data_buffered[i,]
@@ -115,14 +115,17 @@ launch_survey_on_movement <- function(
       dplyr::ungroup() 
   
       # transform movement bouts to linestring
-      sub_traj$geometry = sf::st_sfc(sapply(1:nrow(sub_traj), 
-                            function(i){st_segment(sub_traj[i, c("Lon", "Lat", "x_from", "y_from")])}, simplify = FALSE))
+      sub_traj$geometry = suppressWarnings(sf::st_sfc(sapply(1:nrow(sub_traj), 
+                            function(i){st_segment(sub_traj[i, c("Lon", "Lat", "x_from", "y_from")])}, simplify = FALSE)))
       sub_traj <- sf::st_sf(sub_traj)
       # plot(sf::st_geometry(sub_traj), axes = T) 
       
+      # reduce bouts to their centroids
+      sub_traj_pt <- suppressWarnings(sub_traj |> sf::st_centroid())
+      
       # look which movement bouts have their centroids inside the seg
       within_id <- unlist( sf::st_contains(x = sub_seg, 
-                                           y = sub_traj |> sf::st_cast("MULTIPOINT"), sparse = T) )
+                                           y = sub_traj_pt, sparse = T) )
       
       # sum the number of movement bouts
       if(length(within_id) != 0){
@@ -133,8 +136,8 @@ launch_survey_on_movement <- function(
                           end_time_seg = sub_seg$end_time
         )
         obs <- obs |>
-          dplyr::mutate(centroid_x = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[within_id,] ))[,"X"])),
-                        centroid_y = as.vector(suppressWarnings(sf::st_coordinates(sf::st_centroid( sub_traj[within_id,] ))[,"Y"])) )
+          dplyr::mutate(centroid_x = as.vector(suppressWarnings(sf::st_coordinates(sub_traj_pt[within_id,])[,"X"])),
+                        centroid_y = as.vector(suppressWarnings(sf::st_coordinates(sub_traj_pt[within_id,])[,"Y"])) )
         sub_seg$N_ind_tot <- nrow( obs[!duplicated(obs),] )
       } else {
         sub_seg$N_ind_tot <- 0
