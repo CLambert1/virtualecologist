@@ -229,18 +229,19 @@ center of the movement bout) may not be representative of the movement
 of the individual.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># an example with a small number of individuals</span></span>
-<span><span class="va">survey</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="../reference/launch_survey_on_movement.html">launch_survey_on_movement</a></span><span class="op">(</span></span>
+<span><span class="va">survey</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/launch_survey_on_movement.html">launch_survey_on_movement</a></span><span class="op">(</span></span>
 <span>  survey_data_buffered <span class="op">=</span> <span class="va">example_data</span><span class="op">$</span><span class="va">flight_plan</span>,</span>
 <span>  survey_data_linear <span class="op">=</span> <span class="va">example_data</span><span class="op">$</span><span class="va">survey</span><span class="op">$</span><span class="va">segments</span>,</span>
 <span>  traj_data <span class="op">=</span> <span class="va">example_data</span><span class="op">$</span><span class="va">mvmt_data</span>,</span>
 <span>  line_transect <span class="op">=</span> <span class="cn">TRUE</span>, detection_function <span class="op">=</span> <span class="st">"hn"</span>,</span>
 <span>  sigma <span class="op">=</span> <span class="fl">0.2</span></span>
-<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Applying detection function</span></span>
 <span></span>
 <span><span class="co"># look at the number of sightings</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">survey</span><span class="op">$</span><span class="va">effort_table</span><span class="op">$</span><span class="va">N_ind_tot</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt; 0.00000 0.00000 0.00000 0.00641 0.00000 1.00000</span></span>
+<span><span class="co">#&gt; 0.00000 0.00000 0.00000 0.03846 0.00000 6.00000</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="va">survey</span><span class="op">$</span><span class="va">obs_table</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dist_seg"</span>, <span class="st">"prob_dist"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, </span>
 <span>     xlab <span class="op">=</span> <span class="st">"distance to the track line"</span>, ylab <span class="op">=</span> <span class="st">"detection probability"</span><span class="op">)</span></span></code></pre></div>
