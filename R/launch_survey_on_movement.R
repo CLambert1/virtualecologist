@@ -131,6 +131,7 @@ launch_survey_on_movement <- function(
       if(length(within_id) != 0){
         obs <- data.frame(track_id = sub_traj$track_id[within_id], 
                           step_id = sub_traj$stepID[within_id], 
+                            activity = sub_traj$activity[within_id],
                           seg_id = sub_seg$seg_id,
                           start_time_seg = sub_seg$start_time,
                           end_time_seg = sub_seg$end_time
