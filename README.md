@@ -19,7 +19,8 @@ The package also includes various functions (`%!in%` and `normalize()`)
 
 ## Installation
 
-You can install the development version of simtools following:
+You can install the development version of **virtualecologist**
+following:
 
 ``` r
 # remotes::install_github("CLambert1/virtualecologist")
