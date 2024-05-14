@@ -37,7 +37,6 @@ Suggests:
     ggplot2,
     knitr,
     rmarkdown,
-    simtools,
     tidyterra,
     viridis
 VignetteBuilder: 
