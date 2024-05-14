@@ -1,5 +1,5 @@
-Package: simtools
-Title: Tools For Simulation Analyses
+Package: virtualecologist
+Title: Tools For Simulating Virtual Ecosystems
 Version: 0.1.0
 Authors@R: 
     person("Charlotte", "Lambert", , "charlotte.lambert@univ-lr.fr", role = c("aut", "cre"),
@@ -37,6 +37,7 @@ Suggests:
     ggplot2,
     knitr,
     rmarkdown,
+    simtools,
     tidyterra,
     viridis
 VignetteBuilder: 
@@ -45,4 +46,4 @@ Config/fusen/version: 0.5.2
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1

@@ -1,7 +1,7 @@
 url: ~
 template:
   bootstrap: 5
-  bootswatch: flatly
+  bootswatch: simplex
   theme:  github-light
 repo:
   url:

@@ -1,10 +1,10 @@
-pandoc: 3.1.9
-pkgdown: 2.0.7
+pandoc: 3.1.1
+pkgdown: 2.0.9
 pkgdown_sha: ~
 articles:
   simulate-individual-movements: simulate-individual-movements.html
   simulate-survey: simulate-survey.html
   simulate-virtual-environment: simulate-virtual-environment.html
   simulate-virtual-species: simulate-virtual-species.html
-last_built: 2024-01-18T22:03Z
+last_built: 2024-05-14T09:58Z
 

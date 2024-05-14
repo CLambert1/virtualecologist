@@ -66,7 +66,7 @@ simulate_trajectory_FR(
 a data.frame
 }
 \description{
-Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around a colony and does not perform homing bout. Here, \code{potential_position_func()} considers the initial position as the colony, so that the dist_col field in the output corresponds to the distance to this starting point.
+Simulate the trajectory of a free ranging individual, over a given time period. The function works similarly as \code{\link{simulate_trajectory_CPF}} but the individual is not restrained around a colony and does not perform homing bout. Here, \code{potential_position_func()} considers the initial position as the colony, so that the dist_col field in the output corresponds to the distance to this starting point. The individual starts selecting its next positions based on environmental conditions (checking for residence time) at the third step (against 5th step for central-place foragers).
 }
 \examples{
 library(ggplot2)

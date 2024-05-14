@@ -19,6 +19,9 @@
     <loc>/articles/simulate-virtual-species.html</loc>
   </url>
   <url>
+    <loc>/articles/virtualecologist.html</loc>
+  </url>
+  <url>
     <loc>/authors.html</loc>
   </url>
   <url>
@@ -113,5 +116,8 @@
   </url>
   <url>
     <loc>/reference/simul_spat.html</loc>
+  </url>
+  <url>
+    <loc>/reference/virtualecologist-package.html</loc>
   </url>
 </urlset>

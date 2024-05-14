@@ -5,3 +5,7 @@
 # simtools 0.1.0
 
 * Deploy the package online
+
+# virtualecologist 0.1.0
+
+* rename the package
