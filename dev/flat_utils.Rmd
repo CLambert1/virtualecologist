@@ -27,7 +27,7 @@ The website can be launched locally with `launch_help()`.
 #'
 #' @examples
 launch_help <- function(){
-  system.file("site", "index.html", package = "simtools") |>
+  system.file("site", "index.html", package = "virtualecologist") |>
     utils::browseURL()
 }
 ```
@@ -36,7 +36,7 @@ launch_help <- function(){
 launch_help()
 ```
 
-```{r tests-launch_help}
+```{r tests-launch_help, filename = "test-launch_help.R"}
 test_that("utils works", {
  expect_true(inherits(launch_help, "function")) 
 })
@@ -63,7 +63,7 @@ test_that("utils works", {
 2 %!in% c(2:3)
 ```
   
-```{r tests-not_in}
+```{r tests-not_in, filename = "test-not_in.R"}
 test_that("%!in% works", {
   expect_true( 1 %!in% c(2:3) )
 })
@@ -89,7 +89,7 @@ normalize <- function(cov){ (cov-min(cov))/(max(cov)-min(cov)) }
 normalize(c(1:5))
 ```
   
-```{r tests-normalize}
+```{r tests-normalize, filename = "test-normalize.R"}
 test_that("normalize works", {
   expect_true( max( normalize(c(1:5)) ) == 1 )
 })

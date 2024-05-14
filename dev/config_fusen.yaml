@@ -81,13 +81,17 @@ flat_utils.Rmd:
   path: dev/flat_utils.Rmd
   state: active
   R:
-  - R/.R
-  - R/launch_help.R
-  tests: tests/testthat/test-launch_help.R
-  vignettes: vignettes/utils.Rmd
+  - R/test-not_in.R
+  - R/test-launch_help.R
+  - R/test-normalize.R
+  tests:
+  - tests/testthat/test-test-launch_help.R
+  - tests/testthat/test-test-not_in.R
+  - tests/testthat/test-test-normalize.R
+  vignettes: []
   inflate:
     flat_file: dev/flat_utils.Rmd
-    vignette_name: Utils
+    vignette_name: .na
     open_vignette: true
     check: false
     document: true
