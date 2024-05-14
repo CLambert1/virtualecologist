@@ -16,7 +16,7 @@ All commands that you use to use when developing packages...
 fusen::fill_description(
   pkg = here::here(),
   fields = list(
-    Title = "Tools for simulation analyses",
+    Title = "Tools For Simulating Virtual Ecosystems",
     Description = "Includes a suite of tools to simulate virtual ecological systems, from environment, to animals and surveys.",
     `Authors@R` = c(
       person("Charlotte", "Lambert", email = "charlotte.lambert@univ-lr.fr", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1128-5262"))
@@ -102,7 +102,7 @@ usethis::use_package_doc()
 attachment::att_amend_desc()
 
 # create a vignette for the whole package
-usethis::use_vignette("simtools")
+usethis::use_vignette("virtualecologist")
 
 
 # GitHub
@@ -188,7 +188,7 @@ fusen::init_share_on_github()
 
 ```{r}
 devtools::build(vignettes = TRUE) # construit le package au format tar.gz
-remotes::install_local(path = "~/simtools_0.1.0.tar.gz") # installe le package depuis le format tar.gz
+remotes::install_local(path = "~/CODE_DEV/virtualecologist_0.1.0.tar.gz") # installe le package depuis le format tar.gz
 simtools::launch_help()
 ```
 
@@ -202,24 +202,24 @@ checkhelper::print_globals(quiet = TRUE)
 # Create and use logo
 
 ```{r}
-#### create hexSticker
-library(hexSticker)
-library(showtext)
-## Loading Google fonts (http://www.google.com/fonts)
-font_add_google("Gochi Hand", "Caveat", "Indie Flower", "Nanum Brush Script")
-## Automatically use showtext to render text for future devices
-showtext_auto()
-
-# load the image stored in data-raw
-image <- magick::image_read('data-raw/crystalball_black.png')
-print(image, info = FALSE) 
-
-# generate sticker
-sticker(image, package = "simtools", 
-        p_family = "gochi", p_size = 30, p_color = "black", p_y = 1.35,
-        h_size = 2, h_fill = "#8ACAFF", h_color = "black",
-        s_x = 1.025, s_y = .7, s_height = 5, s_width = 0.8,
-        filename = "man/figures/logo.png")
+# #### create hexSticker
+# library(hexSticker)
+# library(showtext)
+# ## Loading Google fonts (http://www.google.com/fonts)
+# font_add_google("Gochi Hand", "Caveat", "Indie Flower", "Nanum Brush Script")
+# ## Automatically use showtext to render text for future devices
+# showtext_auto()
+# 
+# # load the image stored in data-raw
+# image <- magick::image_read('data-raw/crystalball_black.png')
+# print(image, info = FALSE) 
+# 
+# # generate sticker
+# sticker(image, package = "simtools", 
+#         p_family = "gochi", p_size = 30, p_color = "black", p_y = 1.35,
+#         h_size = 2, h_fill = "#8ACAFF", h_color = "black",
+#         s_x = 1.025, s_y = .7, s_height = 5, s_width = 0.8,
+#         filename = "man/figures/logo.png")
 
 # generate the text with html pointer to use in README.Rmd
 usethis::use_logo(img = "man/figures/logo.png")
