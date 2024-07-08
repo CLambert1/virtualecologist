@@ -3,7 +3,7 @@
 
 # virtualecologist <img src="man/figures/logo.png" align="right" height="139" />
 
-**virtualecologist** provide facilities to simulate virtual ecosystems,
+**virtualecologist** provides facilities to simulate virtual ecosystems,
 from the underlying environment to species distribution and scientific
 surveys. Species can be simulated with a spatial point process using a
 resource layer as reference, or by simulating individual movements
