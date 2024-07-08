@@ -1,105 +1,37 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/CODE_OF_CONDUCT.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/articles/simulate-individual-movements.html</loc>
-  </url>
-  <url>
-    <loc>/articles/simulate-survey.html</loc>
-  </url>
-  <url>
-    <loc>/articles/simulate-virtual-environment.html</loc>
-  </url>
-  <url>
-    <loc>/articles/simulate-virtual-species.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/news/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/assign_flight_plan.html</loc>
-  </url>
-  <url>
-    <loc>/reference/create_grid.html</loc>
-  </url>
-  <url>
-    <loc>/reference/custom_proj.html</loc>
-  </url>
-  <url>
-    <loc>/reference/detection_functions.html</loc>
-  </url>
-  <url>
-    <loc>/reference/detection_process.html</loc>
-  </url>
-  <url>
-    <loc>/reference/example_data.html</loc>
-  </url>
-  <url>
-    <loc>/reference/generate_env_layer.html</loc>
-  </url>
-  <url>
-    <loc>/reference/generate_resource_layer.html</loc>
-  </url>
-  <url>
-    <loc>/reference/generate_survey_plan.html</loc>
-  </url>
-  <url>
-    <loc>/reference/grapes-not-in-grapes.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/launch_help.html</loc>
-  </url>
-  <url>
-    <loc>/reference/launch_survey_on_movement.html</loc>
-  </url>
-  <url>
-    <loc>/reference/normalize.html</loc>
-  </url>
-  <url>
-    <loc>/reference/potential_position_func.html</loc>
-  </url>
-  <url>
-    <loc>/reference/randomdir.html</loc>
-  </url>
-  <url>
-    <loc>/reference/randomdist.html</loc>
-  </url>
-  <url>
-    <loc>/reference/segmentize.html</loc>
-  </url>
-  <url>
-    <loc>/reference/simul_spat.html</loc>
-  </url>
-  <url>
-    <loc>/reference/simulate_trajectory_CPF.html</loc>
-  </url>
-  <url>
-    <loc>/reference/simulate_trajectory_FR.html</loc>
-  </url>
-  <url>
-    <loc>/reference/virtualecologist-package.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/CODE_OF_CONDUCT.html</loc></url>
+<url><loc>/LICENSE-text.html</loc></url>
+<url><loc>/LICENSE.html</loc></url>
+<url><loc>/articles/index.html</loc></url>
+<url><loc>/articles/simulate-individual-movements.html</loc></url>
+<url><loc>/articles/simulate-survey.html</loc></url>
+<url><loc>/articles/simulate-virtual-environment.html</loc></url>
+<url><loc>/articles/simulate-virtual-species.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/news/index.html</loc></url>
+<url><loc>/reference/assign_flight_plan.html</loc></url>
+<url><loc>/reference/create_grid.html</loc></url>
+<url><loc>/reference/custom_proj.html</loc></url>
+<url><loc>/reference/detection_functions.html</loc></url>
+<url><loc>/reference/detection_process.html</loc></url>
+<url><loc>/reference/example_data.html</loc></url>
+<url><loc>/reference/generate_env_layer.html</loc></url>
+<url><loc>/reference/generate_resource_layer.html</loc></url>
+<url><loc>/reference/generate_survey_plan.html</loc></url>
+<url><loc>/reference/grapes-not-in-grapes.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/launch_help.html</loc></url>
+<url><loc>/reference/launch_survey_on_movement.html</loc></url>
+<url><loc>/reference/normalize.html</loc></url>
+<url><loc>/reference/potential_position_func.html</loc></url>
+<url><loc>/reference/randomdir.html</loc></url>
+<url><loc>/reference/randomdist.html</loc></url>
+<url><loc>/reference/segmentize.html</loc></url>
+<url><loc>/reference/simul_spat.html</loc></url>
+<url><loc>/reference/simulate_trajectory_CPF.html</loc></url>
+<url><loc>/reference/simulate_trajectory_FR.html</loc></url>
+<url><loc>/reference/virtualecologist-package.html</loc></url>
 </urlset>
+
